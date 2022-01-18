@@ -23,6 +23,10 @@
 
 # COMMAND ----------
 
+# MAGIC %run ./
+
+# COMMAND ----------
+
 import random, json
 def getOrderItems():
   numberOfItems = random.randint(1,5)
