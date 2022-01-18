@@ -3,6 +3,22 @@
 # MAGIC 
 # MAGIC # AP Juice Lakehouse Platform
 # MAGIC 
+# MAGIC 
+# MAGIC ADD LOGO
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## Introduction
+# MAGIC 
+# MAGIC Add agenda
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### APJ Data Sources
+# MAGIC 
 # MAGIC Data Sources:
 # MAGIC - CRM
 # MAGIC - Sales Data
@@ -10,15 +26,12 @@
 # MAGIC 
 # MAGIC 
 # MAGIC Describe data
-# MAGIC 
-# MAGIC 
-# MAGIC Add agenda
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ### Setup
+# MAGIC ### Environment Setup
 # MAGIC 
 # MAGIC We will be using Databricks Notebooks workflow[https://docs.databricks.com/notebooks/notebook-workflows.html] element to set up environment for this exercise. 
 # MAGIC 
@@ -33,6 +46,7 @@ setup_responses = dbutils.notebook.run("./Utils/Setup-Batch", 0).split()
 local_data_path = setup_responses[0]
 dbfs_data_path = setup_responses[1]
 database_name = setup_responses[2]
+
 bronze_table_path = f"{dbfs_data_path}tables/bronze"
 silver_table_path = f"{dbfs_data_path}tables/silver"
 gold_table_path = f"{dbfs_data_path}tables/gold"
@@ -467,6 +481,19 @@ display(spark.read.json(apj_locations_data_path + "/_delta_log/00000000000000000
 
 # MAGIC %md
 # MAGIC 
+# MAGIC ### CLONE
+# MAGIC 
+# MAGIC 
+# MAGIC What if our use case is more of a having monthly snapshots of the data instead of detailed changes log? Easy way to get it done is to create CLONE of table.
+# MAGIC 
+# MAGIC Delta Lake supports DEEP and SHALLOW clones.
+# MAGIC 
+# MAGIC WRITE UP THE DIFFERENCE
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
 # MAGIC ## ELT Workload
 # MAGIC 
 # MAGIC TODO: introduce incremental updates as more real-life scenario
@@ -480,6 +507,10 @@ display(spark.read.json(apj_locations_data_path + "/_delta_log/00000000000000000
 
 # COMMAND ----------
 
+# add small example for -> dim_location with SK
+
+# COMMAND ----------
+
 # MAGIC %md 
 # MAGIC 
 # MAGIC ### Autoloader
@@ -487,12 +518,32 @@ display(spark.read.json(apj_locations_data_path + "/_delta_log/00000000000000000
 # MAGIC In hour example most of the locations upload their sales data to our storage location on nightly batches. Some of them however have upgraded to hourly or even more frequent data feeds.
 # MAGIC 
 # MAGIC Easy way to bring incremental data to our Delta Lake is by using **autoloader**.
+# MAGIC 
+# MAGIC 
+# MAGIC <img src="https://databricks.com/wp-content/uploads/2020/02/autoloader.png" width=1012/>
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC 
-# MAGIC # create a simple autolaoder to read data files 
+import pyspark.sql.functions as F
+
+checkpoint_path = f'{local_data_path}/_checkpoints'
+write_path = f'{bronze_table_location}/bronze_sales'
+
+# Set up the stream to begin reading incoming files from the autoloader_ingest_path location.
+df = spark.readStream.format('cloudFiles') \
+  .option('cloudFiles.format', 'json') \
+  .withColumn("file_path",F.input_file_name()) \
+  .withColumn("inserted_at", F.current_timestamp()) \
+  .load(autoloader_ingest_path)
+
+# Start the stream.
+# Use the checkpoint_path location to keep a record of all files that
+# have already been uploaded to the upload_path location.
+# For those that have been uploaded since the last check,
+# write the newly-uploaded files' data to the write_path location.
+df.writeStream.format('delta') \
+  .option('checkpointLocation', checkpoint_path) \
+  .start(write_path)
 
 # COMMAND ----------
 
@@ -510,6 +561,20 @@ display(spark.read.json(apj_locations_data_path + "/_delta_log/00000000000000000
 
 # MAGIC %sql
 # MAGIC -- TODO: check that new records are uploaded
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ### Schema Evolution
+# MAGIC 
+# MAGIC Over time data sources schema can change. In traditional ETL that would mean changing the scripts and loosing all new data up before the change is executed.
+# MAGIC 
+# MAGIC Autoloader however can automatically pick up new columns - run the cell bellow and check what happens with our autoloader stream on the cell above
+
+# COMMAND ----------
+
+# GENERATE FILE WITH NEW SCHEMA
 
 # COMMAND ----------
 
@@ -555,6 +620,12 @@ display(spark.read.json(apj_locations_data_path + "/_delta_log/00000000000000000
 # COMMAND ----------
 
 # show how merge into works for both silver tables
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ### OPTIMIZE
 
 # COMMAND ----------
 
