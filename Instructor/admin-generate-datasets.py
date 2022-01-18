@@ -148,12 +148,12 @@ tsd_df.createOrReplaceTempView('tsd_df')
 
 from datetime import date, timedelta, datetime
 
-spark.sql("drop table if exists apj_juice_sales")
+#spark.sql("drop table if exists apj_juice_sales")
 records = spark.table("working_db.working_table_apj_locations").collect()
 
-start_date = date(2021,12,1)
+start_date = date(2022,1,1)
 
-generate_days = 31
+generate_days = 10
 for r in records:
   for x in range(0,generate_days+1):
     sale_date =  (start_date + timedelta(days=x)).strftime("%Y-%m-%d")
@@ -167,28 +167,6 @@ for r in records:
                                       r.min_sales,\
                                       r.max_sales)
     daily_df.write.mode("append").saveAsTable("apj_juice_sales")
-
-
-# COMMAND ----------
-
-# set up Azure Storage link 
-
-storage_name = "apjbootcamp"
-output_container_name = "sales"
-
-sas = ""
-
-spark.conf.set(f"fs.azure.sas.{output_container_name}.{storage_name}.blob.core.windows.net", sas)
-#test connection
-dbutils.fs.ls(f"wasbs://{output_container_name}@{storage_name}.blob.core.windows.net/")
-
-# COMMAND ----------
-
-all_sales = spark.table("apj_juice_sales")
-
-file_path = f"wasbs://{output_container_name}@{storage_name}.blob.core.windows.net/202112/"
-dbutils.fs.rm(file_path, True)
-all_sales.coalesce(1).write.format('json').save(file_path)
 
 
 # COMMAND ----------
@@ -210,15 +188,15 @@ for r in records:
 df_users.display()
 
 # upload to Azure for now
-file_path = f"wasbs://{output_container_name}@{storage_name}.blob.core.windows.net/dim_users/"
-dbutils.fs.rm(file_path, True)
-
-df_users \
-  .coalesce(1) \
-  .write \
-  .mode('overwrite') \
-  .option('header', 'true') \
-  .csv(file_path)
+#file_path = "/mnt/apjbootcamp/dim_users/"
+#dbutils.fs.rm(file_path, True)
+#
+#df_users \
+#  .coalesce(1) \
+#  .write \
+#  .mode('overwrite') \
+#  .option('header', 'true') \
+#  .csv(file_path)
 
 # COMMAND ----------
 
@@ -241,15 +219,15 @@ df_stores.display()
 
 
 # upload to Azure for now
-file_path = f"wasbs://{output_container_name}@{storage_name}.blob.core.windows.net/dim_stores/"
-dbutils.fs.rm(file_path, True)
-
-df_stores \
-  .coalesce(1) \
-  .write \
-  .mode('overwrite') \
-  .option('header', 'true') \
-  .csv(file_path)
+#file_path = "/mnt/apjbootcamp/dim_stores/"
+#dbutils.fs.rm(file_path, True)
+#
+#df_stores \
+#  .coalesce(1) \
+#  .write \
+#  .mode('overwrite') \
+#  .option('header', 'true') \
+#  .csv(file_path)
 
 
 # COMMAND ----------
@@ -259,6 +237,8 @@ def generate_hourly_sales(sale_date, hour, location, output_location):
   
   data_rows = random.randint(attributes.min_sales,attributes.max_sales) / 24 # convert daily sales to hourly
   customer_id_list = range(1, attributes.number_of_customers + 1)
+
+  data_location = output_location + location + '/' + sale_date.replace('-','') + str(hour).zfill(2)
 
   df_spec = (dg.DataGenerator(spark, name="single_hour_dataset", rows=data_rows,partitions = 4)
                               .withColumn("SaleID", StringType(), expr="uuid()")
@@ -281,8 +261,39 @@ def generate_hourly_sales(sale_date, hour, location, output_location):
   .coalesce(1) \
   .write \
   .mode('overwrite') \
-  .json(output_location)
+  .json(data_location)
   
 
 
-generate_hourly_sales(sale_date = '2022-01-18', hour = 18, location = 'SYD01', output_location = f"wasbs://{output_container_name}@{storage_name}.blob.core.windows.net/autoloader/2022011818")
+generate_hourly_sales(sale_date = '2022-01-19', hour = 11, location = 'SYD01', output_location = f"/mnt/apjbootcamp/autoloader/")
+
+# COMMAND ----------
+
+# Generate dim_product - start with all juice and random selection of ingredients
+
+juiceSelection = ["Orange Lake", "Fruit Warehouse", "ACID Sunshine", "SQL Paths","Worth The Squeeze" ,"Fruits Of Labor" ,"Craze" ,"Drink Your Greens" ,"Power Punch" ,"Packed Punch" ,"Powerful Punch" ,"Punch" ,"Joyful" ,"Complete Cleanse" ,"Get Clean" ,"Drink Your Vitamins" ,"Drinkable Vitamins" ,"Healthy Resource" ,"Healthy" ,"Jeneration" ,"Jumpstart" ,"Justified" ,"No Excuse" ,"Jungle" ,"Jumble" ,"Blended Benefits" ,"Squeezed Sweetness" ,"Super Squeezed" ,"Pulp Power" ,"Bounty Of Benefits" ,"Tough And Tasty" ,"Refreshing Reward" ,"Rapid Reward" ,"Fit Drink" ,"Healthy Hydration" ,"Hydration Station" ,"Just Juicy" ,"Juicy Hydration" ,"Nothing To Lose" ,"Indulgent" ,"Fit Fuel"]
+allIngredients = ["Apple","Orange","Carrot","Beatroot","Spinach","Lemon","Yogurt","Melon","Blueberry","Cucumber","Tomatoe","Banana","Strawberries","Clementine","Lemon","Ginger","Pineapple","Celery","Spinach"]
+
+
+def get_ingredients():
+  customIngredients = []
+  number_of_ingredients = random.randint(2,6)
+  for y in range(1,number_of_ingredients):
+    customIngredients.append(random.choice(allIngredients))
+  return customIngredients;
+
+product_dataset = []
+
+for j in juiceSelection:
+  product_dataset.append((j, j, get_ingredients()))
+  
+  
+df_products = spark.createDataFrame(data = product_dataset, schema = ["id", "name", "ingredients"])
+
+df_products.display()
+
+
+
+# COMMAND ----------
+
+dbutils.fs.ls("/mnt/apjbootcamp")
