@@ -25,6 +25,7 @@ print(f"DBFS Path is: {base_table_path}")
 #Local Data path is
 print(f"Local Data Path is: {local_data_path}")
 
+temporary_dbfs_data_path = '/mnt/apjbootcamp/DATASETS/'
 
 # COMMAND ----------
 
@@ -70,28 +71,21 @@ stdout.decode('utf-8'), stderr.decode('utf-8')
 
 # COMMAND ----------
 
-import urllib
+# store incremental data as a table to generate extra files quicker
 
-linkToFile = 'https://apjbootcamp.blob.core.windows.net/datasets/apj_locations.csv?sp=r&st=2022-01-17T02:29:08Z&se=2022-01-20T10:29:08Z&spr=https&sv=2020-08-04&sr=b&sig=os%2F4ngK%2BlT1zj3NAvHz3K5bT%2B2QJU5QQGhM%2BzrQ8cW4%3D'
-localDestination = f'{local_data_path}apj_locations.csv'
-
-resultFilePath, responseHeaders = urllib.request.urlretrieve(linkToFile, localDestination)
+dataPath = f"{temporary_dbfs_data_path}/sales_202201.json"
+df = spark.read.json(dataPath).createOrReplaceTempView('incremental_sales')
 
 # COMMAND ----------
 
-dataPath1 = f'{base_table_path}apj_locations.csv'
-
-df1 = spark.read\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .csv(dataPath1)
-
-display(df1)
-
-# COMMAND ----------
-
-# UPDATE THE REST FROM HERE
+# MAGIC %sql
+# MAGIC CREATE DATABASE IF NOT EXISTS apjbootcamp_working_db;
+# MAGIC 
+# MAGIC drop table if exists apjbootcamp_working_db.jan_sales;
+# MAGIC 
+# MAGIC create table apjbootcamp_working_db.jan_sales
+# MAGIC using delta
+# MAGIC as select *, from_unixtime(ts, "yyyy-MM-dd") as ts_date from incremental_sales order by from_unixtime(ts, "yyyy-MM-dd");
 
 # COMMAND ----------
 

@@ -1,5 +1,6 @@
 # Databricks notebook source
 # MAGIC %scala
+# MAGIC 
 # MAGIC spark.conf.set("com.databricks.training.module_name", "ap_juice")
 # MAGIC val dbNamePrefix = {
 # MAGIC   val tags = com.databricks.logging.AttributionContext.current.tags

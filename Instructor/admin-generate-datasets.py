@@ -153,7 +153,7 @@ records = spark.table("working_db.working_table_apj_locations").collect()
 
 start_date = date(2022,1,1)
 
-generate_days = 10
+generate_days = 31
 for r in records:
   for x in range(0,generate_days+1):
     sale_date =  (start_date + timedelta(days=x)).strftime("%Y-%m-%d")
@@ -166,8 +166,16 @@ for r in records:
                                       [int(item) for item in r.busy_hours.split(',')],\
                                       r.min_sales,\
                                       r.max_sales)
-    daily_df.write.mode("append").saveAsTable("apj_juice_sales")
+    daily_df.write.mode("append").saveAsTable("apj_juice_sales_202201")
 
+
+# COMMAND ----------
+
+spark.table("apj_juice_sales_202201")\
+  .coalesce(1) \
+  .write \
+  .mode('overwrite') \
+  .json("/mnt/apjbootcamp/202201")
 
 # COMMAND ----------
 
@@ -297,3 +305,24 @@ df_products.display()
 # COMMAND ----------
 
 dbutils.fs.ls("/mnt/apjbootcamp")
+
+# COMMAND ----------
+
+# prepare sales files
+
+
+dbutils.fs.ls("/mnt/apjbootcamp/202201")
+
+# COMMAND ----------
+
+dbutils.fs.cp("/mnt/apjbootcamp/202110/part-00000-tid-8934199629056484876-30201cbd-05c3-4464-8872-c2b6ab29899e-11695-1-c000.json", "/mnt/apjbootcamp/DATASETS/sales_202110.json")
+
+# COMMAND ----------
+
+dbutils.fs.cp("/mnt/apjbootcamp/202111/part-00000-tid-7394387897141300851-d8873246-e5b3-4921-8c13-b0d741810cf4-19131-1-c000.json", "/mnt/apjbootcamp/DATASETS/sales_202111.json")
+dbutils.fs.cp("/mnt/apjbootcamp/202112/part-00000-tid-5096899652876637634-be6f1447-537e-48c1-bc81-fa076228ee3d-26625-1-c000.json", "/mnt/apjbootcamp/DATASETS/sales_202112.json")
+dbutils.fs.cp("/mnt/apjbootcamp/202201/part-00000-tid-2122415079289497147-947a6668-525a-4f18-acc0-2972279c9a73-15640-1-c000.json", "/mnt/apjbootcamp/DATASETS/sales_202201.json")
+
+# COMMAND ----------
+
+dbutils.fs.ls("/mnt/apjbootcamp/DATASETS/")
