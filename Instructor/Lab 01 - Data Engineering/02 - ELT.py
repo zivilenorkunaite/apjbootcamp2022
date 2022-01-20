@@ -536,6 +536,11 @@ get_incremental_data('SYD01','2022-01-02')
 
 # COMMAND ----------
 
+# MAGIC %md 
+# MAGIC MOVE OPTIMIZE PART HERE
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC 
 # MAGIC This is great for one-off run, but what if we want to keep updating table every day with new data only?
@@ -628,16 +633,18 @@ get_fixed_records_data('SYD01','2022-01-01')
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC 
-# MAGIC OPTIMIZE silver_sales
-# MAGIC ZORDER BY id
+dbutils.fs.ls('dbfs:/user/hive/warehouse/zivile_norkunaite_ap_juice_db.db/silver_sales/store_id=AKL01/')
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC OPTIMIZE silver_sale_items
+# MAGIC describe history silver_sales
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC OPTIMIZE silver_sales
 # MAGIC ZORDER BY id
 
 # COMMAND ----------
