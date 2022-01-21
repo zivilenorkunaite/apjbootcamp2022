@@ -16,6 +16,10 @@
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ### APJ Data Sources
 # MAGIC 
@@ -79,8 +83,9 @@ spark.sql(f"USE {database_name};")
 
 dbfs_data_path = '/mnt/apjbootcamp/DATASETS'
 autoloader_ingest_path = "/mnt/apjbootcamp/autoloader/"
+dlt_ingest_path = '/dbfs/FileStore/zivile_norkunaite/deltademoasset/dlt/'
 
-refresh_autoloader = True
+refresh_autoloader = False
 
 if refresh_autoloader:
   dbutils.fs.rm(autoloader_ingest_path, True)
@@ -114,6 +119,32 @@ and state = 'PENDING'
   .write \
   .mode('overwrite') \
   .json(f"{autoloader_ingest_path}{location}/{date}/updated_daily_sales.json")
+
+# COMMAND ----------
+
+def get_incremental_data_for_dlt(location, date):
+    df = spark.sql(f"""
+  select CustomerID, Location, OrderSource, PaymentMethod, STATE, SaleID, SaleItems, ts, unix_timestamp() as exported_ts from apjbootcamp_working_db.jan_sales
+where location = '{location}' and ts_date = '{date}'
+  """)
+    df \
+    .coalesce(1) \
+    .write \
+    .mode('overwrite') \
+    .json(f"{dlt_ingest_path}{location}/{date}/daily_sales.json")
+    
+    
+def get_fixed_records_data_for_dlt(location, date):
+  df = spark.sql(f"""
+  select CustomerID, Location, OrderSource, PaymentMethod, 'CANCELED' as STATE, SaleID, SaleItems, from_unixtime(ts) as ts, unix_timestamp() as exported_ts from apjbootcamp_working_db.jan_sales
+where location = '{location}' and ts_date = '{date}'
+and state = 'PENDING'
+  """)
+  df \
+  .coalesce(1) \
+  .write \
+  .mode('overwrite') \
+  .json(f"{dlt_ingest_path}{location}/{date}/updated_daily_sales.json")
 
 # COMMAND ----------
 
@@ -691,6 +722,12 @@ dbutils.fs.ls('dbfs:/user/hive/warehouse/zivile_norkunaite_ap_juice_db.db/silver
 # MAGIC drop table if exists gold_top_customers;
 # MAGIC 
 # MAGIC create table gold_top_customers as select * from v_gold_top_customers;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC select * from gold_top_customers
 
 # COMMAND ----------
 
