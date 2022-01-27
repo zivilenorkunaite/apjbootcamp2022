@@ -27,34 +27,42 @@
 
 # COMMAND ----------
 
-# MAGIC %run "./Includes/env_setup"
+setup_responses = dbutils.notebook.run("./Utils/Setup-Batch", 0).split()
+
+local_data_path = setup_responses[0]
+dbfs_data_path = setup_responses[1]
+
+dlt_ingest_path = f"{dbfs_data_path}/dlt_ingest/"
+
+# COMMAND ----------
+
+# MAGIC %run ./Utils/Define-Functions
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Prepare files for DLT
+# MAGIC ## Prepare files for DLT
 # MAGIC 
-# MAGIC Run this once to reset all previous runs
+# MAGIC Run this once to reset all previous runs and prepare fresh dataset to be ingested
 
 # COMMAND ----------
 
+refresh_dlt_datasets = True
 
-updateFilesLocation = f"{s3_location}/data/updates/fin_transactions_update.csv/"
-dltFilesLocation = f"{s3_location}/data/dlt/fin_transactions/"
-
- 
-# delete source files to have a clean starting point
-#dbutils.fs.rm(dltFilesLocation, recurse = True)
-#dbutils.fs.mkdirs(dltFilesLocation)
-#dbutils.fs.cp(updateFilesLocation, dltFilesLocation, True)
+if refresh_dlt_datasets:
+  dbutils.fs.rm(dlt_ingest_path, True)
+  
+  dbutils.fs.mkdirs(dlt_ingest_path)
+  
+  dbutils.fs.cp(f"{dbfs_data_path}/sales_202112.json", dlt_ingest_path)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ### Prepare and Run DLT Pipeline
+# MAGIC ## Configure DLT Pipeline
 # MAGIC 
-# MAGIC Pipeline code is stored in a different notebook
+# MAGIC Pipeline code is stored in a different notebook.
 
 # COMMAND ----------
 
@@ -64,31 +72,45 @@ dltFilesLocation = f"{s3_location}/data/dlt/fin_transactions/"
 
 # MAGIC %md 
 # MAGIC 
-# MAGIC Simulate new batch files being uploaded to S3 location. If pipeline is running in continues mode - files will be processed as soon as they are uploaded to given S3 bucket
+# MAGIC You will also need to take note of a few configuration values - **Target** and  **Storage Location**
 
 # COMMAND ----------
 
-#dbutils.fs.cp(f"{s3_location}/data/updates/fin_transactions_update_2.csv/", dltFilesLocation, True)
+storage_path = f'/tmp/{username}/dlt-pipeline'
+dlt_database_name = f'{database_name}_dlt'
 
-#dbutils.fs.cp(f"{s3_location}/data/updates/fin_transactions_update_3.csv/", dltFilesLocation, True)
 
-dbutils.fs.cp(f"{s3_location}/data/updates/fin_transactions_update_4.csv/", dltFilesLocation, True)
+displayHTML("""<h2>Use these values to create your Delta Live Pipeline</h2>""")
 
-# COMMAND ----------
+displayHTML("""Target: <b style="color:green">{}</b>""".format(dlt_database_name))
+displayHTML("""Storage Location: <b style="color:green">{}</b>""".format(storage_path))
 
-# DBTITLE 1,Variables defined as per Delta Live Tables Pipeline Configuration
-storage_path = '/temp/zivile.norkunaite/dlt/zivile_dtl_fin_demo-1115'
-dlt_database = 'zivile_fin_demo_dlt'
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ### Explore run Logs
+# MAGIC ## Run the Pipeline
 
 # COMMAND ----------
 
-spark.sql(f"USE {dlt_database};")
+# MAGIC %md 
+# MAGIC 
+# MAGIC Simulate new batch files being uploaded to cloud location. If pipeline is running in continuous mode - files will be processed as soon as they are uploaded. Otherwise they will be picked up on next run.
+
+# COMMAND ----------
+
+get_incremental_data(dlt_ingest_path, 'SYD01','2022-01-01') 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## Explore run Logs
+
+# COMMAND ----------
+
+spark.sql(f"USE {dlt_database_name};")
 
 spark.sql(f"CREATE OR REPLACE VIEW pipeline_logs AS SELECT * FROM delta.`{storage_path}/system/events`")
 

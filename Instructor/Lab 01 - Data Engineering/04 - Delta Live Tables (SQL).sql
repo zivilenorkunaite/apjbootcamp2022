@@ -25,11 +25,15 @@
 
 -- COMMAND ----------
 
+-- MAGIC %run ./Utils/Fetch-User-Metadata
+
+-- COMMAND ----------
+
 -- MAGIC %md
 -- MAGIC 
 -- MAGIC ** ! ! IMPORTANT ! ! **
 -- MAGIC 
--- MAGIC Replace YOUR_USERNAME_HERE in the **3 cells** bellow with your generated username. You can see it on the top right corner (take only part before *@*) or get it by running cell above
+-- MAGIC Replace `YOUR_USERNAME_HERE` in the **3 cells** bellow with your generated username. You can get it by running the cell above this one
 
 -- COMMAND ----------
 
@@ -43,6 +47,7 @@ cloud_files('/dbfs/FileStore/YOUR_USERNAME_HERE/deltademoasset/dlt/' , "json")
 
 -- COMMAND ----------
 
+-- TEMPORARY TABLES will only be available for the pipeline and won't show up in target database
 CREATE TEMPORARY LIVE TABLE dim_users_dlt
 TBLPROPERTIES ("quality" = "lookup")
 COMMENT "Users dimension - not included in database"
@@ -118,24 +123,34 @@ COMMENT "Silver table with clean transaction records" AS
 
 -- COMMAND ----------
 
-CREATE INCREMENTAL LIVE TABLE silver_sales_incremental_dlt;
+-- ============================================================================================
 
-APPLY CHANGES INTO LIVE.silver_sales_incremental_dlt 
-FROM (  SELECT
-    saleID as id,
-    from_unixtime(ts) as ts,
-    Location as store_id,
-    CustomerID as customer_id,
-    location || "-" || cast(CustomerID as string) as unique_customer_id,
-    OrderSource as order_source,
-    STATE as order_state,
-    SaleItems as sale_items
-    ,exported_ts
-  from STREAM(live.bronze_sales_dlt)
-  ) source
-  KEYS (id)
-  IGNORE NULL UPDATES
-  SEQUENCE BY exported_ts
+-- We will add this code during the workshop - keep it commented out to start with
+
+-- You will need this configuration line later as well:
+
+--  "configuration": { "pipelines.applyChangesPreviewEnabled": "true" },
+
+-- ============================================================================================
+
+-- CREATE INCREMENTAL LIVE TABLE silver_sales_incremental_dlt;
+
+-- APPLY CHANGES INTO LIVE.silver_sales_incremental_dlt 
+-- FROM (  SELECT
+--     saleID as id,
+--     from_unixtime(ts) as ts,
+--     Location as store_id,
+--     CustomerID as customer_id,
+--     location || "-" || cast(CustomerID as string) as unique_customer_id,
+--     OrderSource as order_source,
+--     STATE as order_state,
+--     SaleItems as sale_items
+--     ,exported_ts
+--   from STREAM(live.bronze_sales_dlt)
+--   ) source
+--   KEYS (id)
+--   IGNORE NULL UPDATES
+--   SEQUENCE BY exported_ts
 
 
 -- COMMAND ----------
@@ -187,12 +202,6 @@ SELECT
 -- MAGIC %md 
 -- MAGIC 
 -- MAGIC ## Step 3: Create Gold table
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 
--- MAGIC ### Use temporary tables
 
 -- COMMAND ----------
 

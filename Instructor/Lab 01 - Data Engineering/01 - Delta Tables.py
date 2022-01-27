@@ -12,20 +12,28 @@
 # MAGIC 
 # MAGIC ## Introduction
 # MAGIC 
-# MAGIC Add agenda
+# MAGIC In this Notebook we will see how to work with Delta Tables when using Databricks Notebooks. 
+# MAGIC 
+# MAGIC Some of the things we will look at are:
+# MAGIC * Creating a new Delta Table
+# MAGIC * Using Delta Log and Time Traveling 
+# MAGIC * Difference between Managed and External Tables
+# MAGIC * Tracking data changes using Change Data Feed
+# MAGIC * Cloning tables
+# MAGIC * Masking data by using Dynamic Views
+# MAGIC 
+# MAGIC In addition to Delta Tables we will also get to see some tips and tricks on working on Databricks environment.
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### APJ Data Sources
 # MAGIC 
-# MAGIC Data Sources:
-# MAGIC - CRM
-# MAGIC - Sales Data
+# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, AP Juice.
 # MAGIC 
+# MAGIC AP Juice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
 # MAGIC 
-# MAGIC 
-# MAGIC Describe data
+# MAGIC For the first part of the exercise we will be focusing on an export of Store Locations table that has been saved as `csv` file.
 
 # COMMAND ----------
 
@@ -33,16 +41,15 @@
 # MAGIC 
 # MAGIC ### Environment Setup
 # MAGIC 
-# MAGIC We will be using Databricks Notebooks workflow[https://docs.databricks.com/notebooks/notebook-workflows.html] element to set up environment for this exercise. 
+# MAGIC We will be using [Databricks Notebooks workflow](https://docs.databricks.com/notebooks/notebook-workflows.html) element to set up environment for this exercise. 
 # MAGIC 
 # MAGIC `dbutils.notebook.run()` command will run another notebook and return its output to be used here.
 # MAGIC 
-# MAGIC `dbutils` has some other interesting uses such as interacting with file system (check our `dbutils.fs.rm()` being used in the next cell) or to read [Databricks Secrets](https://docs.databricks.com/dev-tools/databricks-utils.html#dbutils-secrets)
+# MAGIC `dbutils` has some other interesting uses such as interacting with file system or reading [Databricks Secrets](https://docs.databricks.com/dev-tools/databricks-utils.html#dbutils-secrets)
 
 # COMMAND ----------
 
 setup_responses = dbutils.notebook.run("./Utils/Setup-Batch", 0).split()
-
 
 local_data_path = setup_responses[0]
 dbfs_data_path = setup_responses[1]
@@ -53,12 +60,6 @@ print("DBFS path is {}".format(dbfs_data_path))
 print("Database name is {}".format(database_name))
 
 spark.sql(f"USE {database_name};")
-
-# COMMAND ----------
-
-# TEMP - REPLACE PATH FOR NOW
-
-dbfs_data_path = '/mnt/apjbootcamp/DATASETS'
 
 # COMMAND ----------
 
@@ -183,7 +184,7 @@ display(df)
 
 table_location = f"dbfs:/user/hive/warehouse/{database_name}.db/stores"
 
-print(f"Make sure this match your table location as per DESCRIBE EXTENDED output above: {table_location}") 
+displayHTML(f"""Make sure <b style="color:green">{table_location}</b> match your table location as per <b>DESCRIBE EXTENDED</b> output above""")
 
 dbutils.fs.ls(table_location)
 
@@ -191,7 +192,7 @@ dbutils.fs.ls(table_location)
 
 # MAGIC %md
 # MAGIC 
-# MAGIC It is a bit hard to read - what if we use Spark and push data to the DataFrame? We can create a python function to do this so we can use it again in the future.
+# MAGIC It is a bit hard to read - what if we push dbutils results data to the DataFrame? We can create a python function to do this so we can use it again in the future.
 
 # COMMAND ----------
 
@@ -248,9 +249,21 @@ dbutils.fs.head(first_log_file_location)
 
 # MAGIC %md
 # MAGIC 
+# MAGIC Another way to see what is stored on our log file is to use `DESCRIBE HISTORY` command. 
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC DESCRIBE HISTORY stores;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
 # MAGIC ### MANAGED Tables
 # MAGIC 
-# MAGIC This is a MANAGED table - we can see it in DESCRIBE EXTENDED results as well as in the transaction log above. A _managed table_ is a Spark SQL table for which Spark manages both the data and the metadata. In the case of managed table, Databricks stores the metadata and data in DBFS in your account. Since Spark SQL manages the tables, running a DROP TABLE command deletes **both** the metadata and data.
+# MAGIC This is a MANAGED table - we can see it in DESCRIBE EXTENDED results as well as in the log file. A _managed table_ is a Spark SQL table for which Spark manages both the data and the metadata. In the case of managed table, Databricks stores the metadata and data in DBFS in your account. Since Spark SQL manages the tables, running a DROP TABLE command deletes **both** the metadata and data.
 # MAGIC 
 # MAGIC Let's try it using a different way to run SQL statements - by using spark.sql() command in a python cell
 
@@ -269,7 +282,9 @@ except Exception as e:
 # MAGIC 
 # MAGIC %md
 # MAGIC 
-# MAGIC Another option is to let Spark SQL manage the metadata, while you control the data location. We refer to this as an unmanaged or **external table**. Spark SQL manages the relevant metadata, so when you perform DROP TABLE, Spark removes only the metadata and not the data itself. The data is still present in the path you provided.
+# MAGIC As expected, cell above logs an error. That is because running `DROP TABLE stores` has also deleted all data files.
+# MAGIC 
+# MAGIC There is an option to let Spark SQL manage the metadata, while you control the data location. We refer to this as an unmanaged or **external table**. Spark SQL manages the relevant metadata, so when you perform `DROP TABLE`, Spark removes only the metadata and not the data itself. The data is still present in the path you provided when creating that table (e.g. on your S3 bucket or Azure Storage account).
 # MAGIC 
 # MAGIC Re-create our `stores` table, this time as an external table. `df` still has our initial DataFrame so it can be used to save data into table
 
@@ -283,6 +298,12 @@ df.write \
   .option("path", stores_data_path) \
   .saveAsTable("stores")
 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC Check that Location value is different - data files have been stored in the `stores_data_path` location we provided above.
 
 # COMMAND ----------
 
@@ -304,13 +325,13 @@ df.write \
 
 # COMMAND ----------
 
-show_files_as_dataframe(stores_data_path).display();
+dbutils.fs.ls(stores_data_path)
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC We will need this table however so let's create a Delta Table pointing to existing location
+# MAGIC We will need this table however so let's create a Delta Table pointing to the same `stores_data_path` location
 
 # COMMAND ----------
 
@@ -360,6 +381,12 @@ spark.sql(f"CREATE TABLE stores LOCATION '{stores_data_path}'")
 
 # MAGIC %md
 # MAGIC 
+# MAGIC See how you can plot this data in a cell above - create a map colored by number of stores in each country
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
 # MAGIC ### Track Data History
 # MAGIC 
 # MAGIC 
@@ -379,7 +406,7 @@ spark.sql(f"CREATE TABLE stores LOCATION '{stores_data_path}'")
 
 # COMMAND ----------
 
-show_files_as_dataframe(stores_data_path + "/_delta_log").display();
+show_files_as_dataframe(stores_data_path + "/_delta_log/").display();
 
 # COMMAND ----------
 
@@ -397,7 +424,7 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC select * from stores VERSION AS OF 3;
+# MAGIC select * from stores VERSION AS OF 2 where id = 'MEL02';
 
 # COMMAND ----------
 
@@ -406,6 +433,18 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC You can remove files no longer referenced by a Delta table and are older than the retention threshold by running the `VACCUM` command on the table. vacuum is not triggered automatically. The default retention threshold for the files is 7 days.
 # MAGIC 
 # MAGIC `vacuum` deletes only data files, not log files. Log files are deleted automatically and asynchronously after checkpoint operations. The default retention period of log files is 30 days, configurable through the `delta.logRetentionDuration` property which you set with the `ALTER TABLE SET TBLPROPERTIES` SQL method.
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC VACUUM stores RETAIN 0 HOURS
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC select * from stores VERSION AS OF 2 where id = 'MEL02';
 
 # COMMAND ----------
 
@@ -474,21 +513,37 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC  
 # MAGIC 
 # MAGIC * A **deep clone** is a clone that copies the source table data to the clone target in addition to the metadata of the existing table.
-# MAGIC * A **shallow clone** is a clone that does not copy the data files to the clone target. The table metadata is equivalent to the source. These clones are cheaper to create.
+# MAGIC * A **shallow clone** is a clone that does not copy the data files to the clone target. The table metadata is equivalent to the source. These clones are cheaper to create, but they will break if original data files were not available
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC CREATE TABLE stores_clone DEEP CLONE stores VERSION AS OF 3 -- you can specify timestamp here instead of a version
+# MAGIC create table stores_clone DEEP CLONE stores VERSION AS OF 3 -- you can specify timestamp here instead of a version
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
 # MAGIC describe extended stores_clone;
+
+# COMMAND ----------
+
+# MAGIC %sql
 # MAGIC 
 # MAGIC describe history stores_clone;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC create table stores_clone_shallow SHALLOW CLONE stores
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC describe history stores_clone_shallow;
 
 # COMMAND ----------
 
@@ -526,6 +581,12 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC select * from v_stores_email_redacted;
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
 # MAGIC CREATE VIEW v_stores_country_limited AS
 # MAGIC SELECT *
 # MAGIC FROM stores
@@ -533,12 +594,6 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC   (is_member('NZ_team') and store_country = 'NZL')
 # MAGIC OR
 # MAGIC   (is_member('AU_team') and store_country = 'AUS');
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from v_stores_email_redacted;
 
 # COMMAND ----------
 

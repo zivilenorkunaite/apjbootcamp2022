@@ -1,6 +1,5 @@
 # Databricks notebook source
 # MAGIC %scala
-# MAGIC 
 # MAGIC spark.conf.set("com.databricks.training.module_name", "ap_juice")
 # MAGIC val dbNamePrefix = {
 # MAGIC   val tags = com.databricks.logging.AttributionContext.current.tags
@@ -18,17 +17,12 @@
 
 # COMMAND ----------
 
-databaseName = spark.conf.get("com.databricks.training.spark.dbName")
-userName = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
-displayHTML("""User name is <b style="color:green">{}</b>.""".format(userName))
+database_name = spark.conf.get("com.databricks.training.spark.dbName")
+username = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
+
+displayHTML("""Username is <b style="color:green">{}</b>""".format(username))
 
 # COMMAND ----------
 
-spark.sql("CREATE DATABASE IF NOT EXISTS {}".format(databaseName))
-spark.sql("USE {}".format(databaseName))
-
-displayHTML("""Using the database <b style="color:green">{}</b>.""".format(databaseName))
-
-# COMMAND ----------
-
-
+base_table_path = f"dbfs:/FileStore/{username}/deltademoasset/"
+local_data_path = f"/dbfs/FileStore/{username}/deltademoasset/"
