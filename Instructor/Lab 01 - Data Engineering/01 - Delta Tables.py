@@ -503,6 +503,21 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %md
 # MAGIC 
+# MAGIC Delta CDC gives back 4 cdc types in the "__change_type" column:
+# MAGIC 
+# MAGIC | CDC Type             | Description                                                               |
+# MAGIC |----------------------|---------------------------------------------------------------------------|
+# MAGIC | **update_preimage**  | Content of the row before an update                                       |
+# MAGIC | **update_postimage** | Content of the row after the update (what you want to capture downstream) |
+# MAGIC | **delete**           | Content of a row that has been deleted                                    |
+# MAGIC | **insert**           | Content of a new row that has been inserted                               |
+# MAGIC 
+# MAGIC Therefore, 1 update results in 2 rows in the cdc stream (one row with the previous values, one with the new values)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
 # MAGIC ### CLONE
 # MAGIC 
 # MAGIC 

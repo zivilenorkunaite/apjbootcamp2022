@@ -9,27 +9,28 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC 
 # MAGIC ## Introduction
 # MAGIC 
-# MAGIC Add agenda
-
-# COMMAND ----------
-
-
+# MAGIC In this Notebook we will see how to implement Medalion Architecture on your Lakehouse. 
+# MAGIC 
+# MAGIC Some of the things we will look at are:
+# MAGIC * Using Auto-loader
+# MAGIC    * Batch and Stream Ingestion
+# MAGIC    * Schema Evolution
+# MAGIC * Optimizing tables for specific query pattern using OPTIMIZE and ZORDER
+# MAGIC * Incremental updates using MERGE
+# MAGIC * Scheduling jobs
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ### APJ Data Sources
 # MAGIC 
-# MAGIC Data Sources:
-# MAGIC - CRM
-# MAGIC - Sales Data
+# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, AP Juice.
 # MAGIC 
+# MAGIC AP Juice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
 # MAGIC 
-# MAGIC 
-# MAGIC Describe data
+# MAGIC For this part of the exercise we will be processing 3 existing dimensions and sales transactions datasets. Files will be a mix of `csv` and `json` files and our goal is to have **incremental updates** for sales table.
 
 # COMMAND ----------
 
@@ -534,7 +535,7 @@ select * from v_silver_sale_items;""")
 # MAGIC 
 # MAGIC Running `OPTIMIZE` on a table on Delta Lake on Databricks can improve the speed of read queries from a table by coalescing small files into larger ones. 
 # MAGIC 
-# MAGIC Default output file size is 1GB, but in our relatively small dataset it would be better to have smaller files
+# MAGIC Default output file size is 1GB, but in our relatively small dataset it would be better to have smaller files.
 
 # COMMAND ----------
 
@@ -557,6 +558,12 @@ spark.conf.set("spark.databricks.delta.optimize.maxFileSize", 52428800)
 
 # COMMAND ----------
 
+# MAGIC %md
+# MAGIC 
+# MAGIC How did this `OPTIMIZE` command help? It is all in Delta Log files!
+
+# COMMAND ----------
+
 dbutils.fs.ls(f"{bronze_table_path}silver_sale_items/_delta_log/")
 
 # COMMAND ----------
@@ -571,7 +578,7 @@ spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValue
 # MAGIC 
 # MAGIC For a given day store sent us records twice - second time was to close all pending sales.
 # MAGIC 
-# MAGIC Make sure your autoloader is still running in streaming mode (or start ir again) to process these new records.
+# MAGIC Make sure your autoloader is still running in streaming mode (or start it again) to process these new records.
 
 # COMMAND ----------
 
@@ -587,7 +594,7 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # MAGIC %md
 # MAGIC 
-# MAGIC `_resqued_data` column contains any parsing errors. There should be none if everything remains as a string, but we have provided SchemaHints value before.
+# MAGIC `_resqued_data` column contains any parsing errors. There should be none if everything remains as an autoloader default string, but we have provided SchemaHints value before.
 
 # COMMAND ----------
 

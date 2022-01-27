@@ -102,6 +102,9 @@ def download_datasets(datasets_data_path, full_refresh=False):
 
 # COMMAND ----------
 
+# create path if it does not exist
+dbutils.fs.mkdirs(base_table_path)
+
 download_datasets(local_data_path)
 
 # COMMAND ----------
