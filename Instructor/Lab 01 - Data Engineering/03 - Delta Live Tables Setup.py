@@ -66,24 +66,32 @@ if refresh_dlt_datasets:
 
 # COMMAND ----------
 
-# MAGIC %run "./04 - Delta Live Tables (SQL)"
+"./04 - Delta Live Tables (SQL)"
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC 
-# MAGIC You will also need to take note of a few configuration values - **Target** and  **Storage Location**
+# MAGIC You will also need to take note of a **Configuration**,  **Target** and  **Storage Location** values
 
 # COMMAND ----------
 
-storage_path = f'/tmp/{username}/dlt-pipeline'
+storage_path = f'/tmp/{username}/dlt_pipeline'
 dlt_database_name = f'{database_name}_dlt'
 
 
 displayHTML("""<h2>Use these values to create your Delta Live Pipeline</h2>""")
+displayHTML("""<b>Configuration:</b>""")
+displayHTML("""Key: <b style="color:green">mypipeline.path</b>""")
+displayHTML("""Value: <b style="color:green">{}</b>""".format(username))
+displayHTML("""<b>Target:</b>""")
+displayHTML("""<b style="color:green">{}</b>""".format(dlt_database_name))
+displayHTML("""<b>Storage Location: </b>""")
+displayHTML("""<b style="color:green">{}</b>""".format(storage_path))
 
-displayHTML("""Target: <b style="color:green">{}</b>""".format(dlt_database_name))
-displayHTML("""Storage Location: <b style="color:green">{}</b>""".format(storage_path))
+
+# COMMAND ----------
+
 
 
 # COMMAND ----------

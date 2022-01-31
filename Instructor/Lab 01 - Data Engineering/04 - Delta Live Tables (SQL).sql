@@ -37,13 +37,15 @@
 
 -- COMMAND ----------
 
+set current_path = ;
+
 CREATE INCREMENTAL LIVE TABLE bronze_sales_dlt
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze sales table with all transactions"
 AS 
 SELECT * 
 FROM
-cloud_files('/dbfs/FileStore/YOUR_USERNAME_HERE/deltademoasset/dlt/' , "json") 
+cloud_files( '/FileStore/${mypipeline.data_path}/deltademoasset/dlt_ingest/' , "json") 
 
 -- COMMAND ----------
 
@@ -54,7 +56,7 @@ COMMENT "Users dimension - not included in database"
 AS 
 SELECT store_id || "-" || cast(id as string) as unique_id, id, store_id, name, email 
 FROM 
-json.`/dbfs/FileStore/YOUR_USERNAME_HERE/deltademoasset/users.json`;
+json.`/FileStore/${mypipeline.data_path}/deltademoasset/users.json`;
 
 
 -- COMMAND ----------
@@ -65,7 +67,7 @@ COMMENT "Store locations dimension - not included in database"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
-json.`/dbfs/FileStore/YOUR_USERNAME_HERE/deltademoasset/stores.json`;
+json.`/FileStore/${mypipeline.data_path}/deltademoasset/stores.json`;
 
 -- COMMAND ----------
 
@@ -117,8 +119,7 @@ COMMENT "Silver table with clean transaction records" AS
     location || "-" || cast(CustomerID as string) as unique_customer_id,
     OrderSource as order_source,
     STATE as order_state,
-    SaleItems as sale_items,
-    exported_ts
+    SaleItems as sale_items
   from STREAM(live.bronze_sales_dlt)
 
 -- COMMAND ----------
