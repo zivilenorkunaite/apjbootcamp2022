@@ -36,10 +36,6 @@ dlt_ingest_path = f"{dbfs_data_path}/dlt_ingest/"
 
 # COMMAND ----------
 
-# MAGIC %run ./Utils/Define-Functions
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC ## Prepare files for DLT
 # MAGIC 
@@ -66,13 +62,14 @@ if refresh_dlt_datasets:
 
 # COMMAND ----------
 
-"./04 - Delta Live Tables (SQL)"
+# MAGIC %md
+# MAGIC You can find DLT Pipeline code notebook on Repos -> */apjbootcamp2022/Lab 01 - Data Engineering/04 - Delta Live Tables (SQL)*
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC 
-# MAGIC You will also need to take note of a **Configuration**,  **Target** and  **Storage Location** values
+# MAGIC You will also need a **Configuration**,  **Target** and  **Storage Location** values
 
 # COMMAND ----------
 
@@ -88,10 +85,6 @@ displayHTML("""<b>Target:</b>""")
 displayHTML("""<b style="color:green">{}</b>""".format(dlt_database_name))
 displayHTML("""<b>Storage Location: </b>""")
 displayHTML("""<b style="color:green">{}</b>""".format(storage_path))
-
-
-# COMMAND ----------
-
 
 
 # COMMAND ----------

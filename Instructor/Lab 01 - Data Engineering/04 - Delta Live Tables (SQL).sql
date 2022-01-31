@@ -25,20 +25,6 @@
 
 -- COMMAND ----------
 
--- MAGIC %run ./Utils/Fetch-User-Metadata
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 
--- MAGIC ** ! ! IMPORTANT ! ! **
--- MAGIC 
--- MAGIC Replace `YOUR_USERNAME_HERE` in the **3 cells** bellow with your generated username. You can get it by running the cell above this one
-
--- COMMAND ----------
-
-set current_path = ;
-
 CREATE INCREMENTAL LIVE TABLE bronze_sales_dlt
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze sales table with all transactions"

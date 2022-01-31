@@ -2,9 +2,6 @@
 # MAGIC %md
 # MAGIC 
 # MAGIC # AP Juice Lakehouse Platform
-# MAGIC 
-# MAGIC 
-# MAGIC ADD LOGO
 
 # COMMAND ----------
 
@@ -42,9 +39,7 @@
 # MAGIC 
 # MAGIC `dbutils.notebook.run()` command will run another notebook and return its output to be used here.
 # MAGIC 
-# MAGIC `dbutils` has some other interesting uses such as interacting with file system (check our `dbutils.fs.rm()` being used in the next cell) or to read Secrets[ ADD LINK ]
-# MAGIC 
-# MAGIC We can also call notebook by using `%run` magic command
+# MAGIC `dbutils` has some other interesting uses such as interacting with file system (check our `dbutils.fs.rm()` being used in the next cell) or to read Secrets.
 
 # COMMAND ----------
 
@@ -237,14 +232,13 @@ write_path = f'{bronze_table_path}/bronze_sales'
 
 spark.sql("drop table if exists bronze_sales")
 
-# Run these only if you want to start a fresh run!
-dbutils.fs.rm(checkpoint_path,True)
-dbutils.fs.rm(schema_path,True)
-dbutils.fs.rm(write_path,True)
-
 refresh_autoloader_datasets = True
 
 if refresh_autoloader_datasets:
+  # Run these only if you want to start a fresh run!
+  dbutils.fs.rm(checkpoint_path,True)
+  dbutils.fs.rm(schema_path,True)
+  dbutils.fs.rm(write_path,True)
   dbutils.fs.rm(autoloader_ingest_path, True)
   
   dbutils.fs.mkdirs(autoloader_ingest_path)

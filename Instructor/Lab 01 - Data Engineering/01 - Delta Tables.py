@@ -2,9 +2,6 @@
 # MAGIC %md
 # MAGIC 
 # MAGIC # AP Juice Lakehouse Platform
-# MAGIC 
-# MAGIC 
-# MAGIC ADD LOGO
 
 # COMMAND ----------
 
