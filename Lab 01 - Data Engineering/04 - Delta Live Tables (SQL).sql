@@ -110,38 +110,6 @@ COMMENT "Silver table with clean transaction records" AS
 
 -- COMMAND ----------
 
--- ============================================================================================
-
--- We will add this code during the workshop - keep it commented out to start with
-
--- You will need this configuration line later as well:
-
---  "configuration": { "pipelines.applyChangesPreviewEnabled": "true" },
-
--- ============================================================================================
-
--- CREATE INCREMENTAL LIVE TABLE silver_sales_incremental_dlt;
-
--- APPLY CHANGES INTO LIVE.silver_sales_incremental_dlt 
--- FROM (  SELECT
---     saleID as id,
---     from_unixtime(ts) as ts,
---     Location as store_id,
---     CustomerID as customer_id,
---     location || "-" || cast(CustomerID as string) as unique_customer_id,
---     OrderSource as order_source,
---     STATE as order_state,
---     SaleItems as sale_items
---     ,exported_ts
---   from STREAM(live.bronze_sales_dlt)
---   ) source
---   KEYS (id)
---   IGNORE NULL UPDATES
---   SEQUENCE BY exported_ts
-
-
--- COMMAND ----------
-
 CREATE INCREMENTAL LIVE TABLE silver_sale_items_dlt (
   CONSTRAINT `All custom juice must have ingredients` EXPECT (NOT(product_id = 'Custom' and size(product_ingredients) = 0))
 ) 
@@ -223,3 +191,49 @@ from live.silver_sale_items_dlt s
   join live.dim_users_dlt c on ss.unique_customer_id = c.unique_id
 where ss.unique_customer_id is not null 
 group by s.store_id, ss.unique_customer_id, c.name
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC ## Step 4: MERGE Preview
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC ### Implement APPLY CHANGES INTO for our silver table
+-- MAGIC 
+-- MAGIC You will need to modify pipeline configuration for this step to work.
+
+-- COMMAND ----------
+
+-- ============================================================================================
+
+-- We will add this code during the workshop - keep it commented out to start with
+
+-- You will need this configuration line later as well:
+
+--  "configuration": { "pipelines.applyChangesPreviewEnabled": "true" },
+
+-- ============================================================================================
+
+-- CREATE INCREMENTAL LIVE TABLE silver_sales_incremental_dlt;
+
+-- APPLY CHANGES INTO LIVE.silver_sales_incremental_dlt 
+-- FROM (  SELECT
+--     saleID as id,
+--     from_unixtime(ts) as ts,
+--     Location as store_id,
+--     CustomerID as customer_id,
+--     location || "-" || cast(CustomerID as string) as unique_customer_id,
+--     OrderSource as order_source,
+--     STATE as order_state,
+--     SaleItems as sale_items
+--     ,exported_ts
+--   from STREAM(live.bronze_sales_dlt)
+--   ) source
+--   KEYS (id)
+--   IGNORE NULL UPDATES
+--   SEQUENCE BY exported_ts
+

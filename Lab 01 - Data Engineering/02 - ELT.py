@@ -445,11 +445,13 @@ get_incremental_data(autoloader_ingest_path, 'SYD01','2022-01-02')
 
 spark.sql("drop table if exists silver_sales;")
 
-spark.sql(f"""create table silver_sales 
+spark.sql(f"""
+create table silver_sales 
 using delta
 location '{bronze_table_path}silver_sales'
 as
-select * from v_silver_sales;""")
+select * from v_silver_sales;
+""")
 
 # COMMAND ----------
 
@@ -499,11 +501,13 @@ select * from v_silver_sales;""")
 
 spark.sql("drop table if exists silver_sale_items");
 
-spark.sql(f"""create table silver_sale_items
+spark.sql(f"""
+create table silver_sale_items
 using delta
 location '{bronze_table_path}silver_sale_items'
 as
-select * from v_silver_sale_items;""")
+select * from v_silver_sale_items;
+""")
 
 # COMMAND ----------
 
@@ -656,26 +660,10 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC create or replace view v_gold_country_sales as
-# MAGIC 
-# MAGIC select l.country_code, sum(product_cost) as total_sales, count(distinct sale_id) as number_of_sales
-# MAGIC from silver_sale_items s join dim_locations l on s.store_id = l.id
-# MAGIC group by l.country_code;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
 # MAGIC drop table if exists gold_country_sales;
 # MAGIC 
-# MAGIC create table gold_country_sales as select * from v_gold_country_sales;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC create or replace view v_gold_top_customers as 
-# MAGIC 
+# MAGIC create table gold_country_sales 
+# MAGIC as 
 # MAGIC select s.store_id, ss.unique_customer_id, c.name, sum(product_cost) total_spend 
 # MAGIC from silver_sale_items s 
 # MAGIC   join silver_sales ss on s.sale_id = ss.id
@@ -689,7 +677,14 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 # MAGIC 
 # MAGIC drop table if exists gold_top_customers;
 # MAGIC 
-# MAGIC create table gold_top_customers as select * from v_gold_top_customers;
+# MAGIC create table gold_top_customers 
+# MAGIC as
+# MAGIC select s.store_id, ss.unique_customer_id, c.name, sum(product_cost) total_spend 
+# MAGIC from silver_sale_items s 
+# MAGIC   join silver_sales ss on s.sale_id = ss.id
+# MAGIC   join dim_customers c on ss.unique_customer_id = c.unique_id
+# MAGIC where ss.unique_customer_id is not null 
+# MAGIC group by s.store_id, ss.unique_customer_id, c.name;
 
 # COMMAND ----------
 
