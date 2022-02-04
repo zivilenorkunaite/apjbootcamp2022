@@ -634,18 +634,6 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC merge into silver_sale_items target
-# MAGIC    using v_silver_sale_items source
-# MAGIC    on target.id = source.id
-# MAGIC when matched and target.row_hash <> source.row_hash then 
-# MAGIC   update set *
-# MAGIC when not matched then
-# MAGIC   insert *
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
 # MAGIC select * from silver_sales
 # MAGIC where store_id = 'SYD01'
 # MAGIC and id = 'd2e70607-02f7-417d-a5cb-be301c66bb03'

@@ -36,6 +36,10 @@ dlt_ingest_path = f"{dbfs_data_path}/dlt_ingest/"
 
 # COMMAND ----------
 
+# MAGIC %run ./Utils/Define-Functions
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Prepare files for DLT
 # MAGIC 
@@ -79,7 +83,7 @@ dlt_database_name = f'{database_name}_dlt'
 
 displayHTML("""<h2>Use these values to create your Delta Live Pipeline</h2>""")
 displayHTML("""<b>Configuration:</b>""")
-displayHTML("""Key: <b style="color:green">mypipeline.path</b>""")
+displayHTML("""Key: <b style="color:green">mypipeline.data_path</b>""")
 displayHTML("""Value: <b style="color:green">{}</b>""".format(username))
 displayHTML("""<b>Target:</b>""")
 displayHTML("""<b style="color:green">{}</b>""".format(dlt_database_name))
@@ -91,7 +95,13 @@ displayHTML("""<b style="color:green">{}</b>""".format(storage_path))
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ## Run the Pipeline
+# MAGIC ## Create and Run your Pipeline NOW
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## Incremental Updates
 
 # COMMAND ----------
 

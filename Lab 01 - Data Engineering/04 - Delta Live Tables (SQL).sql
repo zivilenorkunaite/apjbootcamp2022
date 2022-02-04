@@ -214,7 +214,9 @@ group by s.store_id, ss.unique_customer_id, c.name
 
 -- You will need this configuration line later as well:
 
---  "configuration": { "pipelines.applyChangesPreviewEnabled": "true" },
+--  "configuration": { 
+--   "pipelines.applyChangesPreviewEnabled": "true" 
+--   },
 
 -- ============================================================================================
 
