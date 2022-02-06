@@ -57,6 +57,14 @@ json.`/FileStore/${mypipeline.data_path}/deltademoasset/stores.json`;
 
 -- COMMAND ----------
 
+CREATE LIVE TABLE dim_products_dlt
+TBLPROPERTIES ("quality" = "lookup")
+COMMENT "Products dimension "
+AS 
+SELECT * FROM  json.`/FileStore/${mypipeline.data_path}/deltademoasset/products.json`;
+
+-- COMMAND ----------
+
 -- MAGIC %md
 -- MAGIC 
 -- MAGIC ## Step 2: Create a Silver table
@@ -107,38 +115,6 @@ COMMENT "Silver table with clean transaction records" AS
     STATE as order_state,
     SaleItems as sale_items
   from STREAM(live.bronze_sales_dlt)
-
--- COMMAND ----------
-
--- ============================================================================================
-
--- We will add this code during the workshop - keep it commented out to start with
-
--- You will need this configuration line later as well:
-
---  "configuration": { "pipelines.applyChangesPreviewEnabled": "true" },
-
--- ============================================================================================
-
--- CREATE INCREMENTAL LIVE TABLE silver_sales_incremental_dlt;
-
--- APPLY CHANGES INTO LIVE.silver_sales_incremental_dlt 
--- FROM (  SELECT
---     saleID as id,
---     from_unixtime(ts) as ts,
---     Location as store_id,
---     CustomerID as customer_id,
---     location || "-" || cast(CustomerID as string) as unique_customer_id,
---     OrderSource as order_source,
---     STATE as order_state,
---     SaleItems as sale_items
---     ,exported_ts
---   from STREAM(live.bronze_sales_dlt)
---   ) source
---   KEYS (id)
---   IGNORE NULL UPDATES
---   SEQUENCE BY exported_ts
-
 
 -- COMMAND ----------
 

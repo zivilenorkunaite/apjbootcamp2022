@@ -27,12 +27,16 @@
 
 # COMMAND ----------
 
-setup_responses = dbutils.notebook.run("./Utils/Setup-Batch", 0).split()
+setup_responses = dbutils.notebook.run("./Utils/Setup-Datasets", 0).split()
 
 local_data_path = setup_responses[0]
 dbfs_data_path = setup_responses[1]
 
 dlt_ingest_path = f"{dbfs_data_path}/dlt_ingest/"
+
+# COMMAND ----------
+
+# MAGIC %run ./Utils/Define-Functions
 
 # COMMAND ----------
 
@@ -79,7 +83,7 @@ dlt_database_name = f'{database_name}_dlt'
 
 displayHTML("""<h2>Use these values to create your Delta Live Pipeline</h2>""")
 displayHTML("""<b>Configuration:</b>""")
-displayHTML("""Key: <b style="color:green">mypipeline.path</b>""")
+displayHTML("""Key: <b style="color:green">mypipeline.data_path</b>""")
 displayHTML("""Value: <b style="color:green">{}</b>""".format(username))
 displayHTML("""<b>Target:</b>""")
 displayHTML("""<b style="color:green">{}</b>""".format(dlt_database_name))
@@ -91,13 +95,23 @@ displayHTML("""<b style="color:green">{}</b>""".format(storage_path))
 
 # MAGIC %md
 # MAGIC 
-# MAGIC ## Run the Pipeline
+# MAGIC ## Create and Run your Pipeline NOW
+# MAGIC 
+# MAGIC It will take some time for pipeline to start. While waiting - explore `04 - Delta Live Tables (SQL)` notebook to see the actual code used to create it.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## Incremental Updates
 
 # COMMAND ----------
 
 # MAGIC %md 
 # MAGIC 
-# MAGIC Simulate new batch files being uploaded to cloud location. If pipeline is running in continuous mode - files will be processed as soon as they are uploaded. Otherwise they will be picked up on next run.
+# MAGIC Simulate new batch files being uploaded to cloud location. 
+# MAGIC 
+# MAGIC If pipeline is running in continuous mode - files will be processed as soon as they are uploaded. Otherwise new files will be picked up on the next run.
 
 # COMMAND ----------
 
@@ -119,8 +133,22 @@ spark.sql(f"CREATE OR REPLACE VIEW pipeline_logs AS SELECT * FROM delta.`{storag
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC SELECT * FROM pipeline_logs
-# MAGIC ORDER BY timestamp
+# MAGIC SELECT
+# MAGIC   id,
+# MAGIC   expectations.dataset,
+# MAGIC   expectations.name,
+# MAGIC   expectations.failed_records,
+# MAGIC   expectations.passed_records
+# MAGIC FROM(
+# MAGIC   SELECT 
+# MAGIC     id,
+# MAGIC     timestamp,
+# MAGIC     details:flow_progress.metrics,
+# MAGIC     details:flow_progress.data_quality.dropped_records,
+# MAGIC     explode(from_json(details:flow_progress:data_quality:expectations
+# MAGIC              ,schema_of_json("[{'name':'str', 'dataset':'str', 'passed_records':42, 'failed_records':42}]"))) expectations
+# MAGIC   FROM pipeline_logs
+# MAGIC   WHERE details:flow_progress.metrics IS NOT NULL) data_quality
 
 # COMMAND ----------
 
@@ -138,37 +166,3 @@ spark.sql(f"CREATE OR REPLACE VIEW pipeline_logs AS SELECT * FROM delta.`{storag
 # MAGIC     * `expectations`
 # MAGIC       * `name`, `dataset`, `passed_records`, `failed_records`
 # MAGIC   
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC SELECT
-# MAGIC   details:flow_definition.output_dataset,
-# MAGIC   details:flow_definition.input_datasets,
-# MAGIC   details:flow_definition.flow_type,
-# MAGIC   details:flow_definition.schema,
-# MAGIC   details:flow_definition
-# MAGIC FROM pipeline_logs
-# MAGIC WHERE details:flow_definition IS NOT NULL
-# MAGIC ORDER BY timestamp
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC SELECT
-# MAGIC   id,
-# MAGIC   expectations.dataset,
-# MAGIC   expectations.name,
-# MAGIC   expectations.failed_records,
-# MAGIC   expectations.passed_records
-# MAGIC FROM(
-# MAGIC   SELECT 
-# MAGIC     id,
-# MAGIC     timestamp,
-# MAGIC     details:flow_progress.metrics,
-# MAGIC     details:flow_progress.data_quality.dropped_records,
-# MAGIC     explode(from_json(details:flow_progress:data_quality:expectations
-# MAGIC              ,schema_of_json("[{'name':'str', 'dataset':'str', 'passed_records':42, 'failed_records':42}]"))) expectations
-# MAGIC   FROM pipeline_logs
-# MAGIC   WHERE details:flow_progress.metrics IS NOT NULL) data_quality
