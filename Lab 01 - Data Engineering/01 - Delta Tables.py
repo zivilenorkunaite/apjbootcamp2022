@@ -221,6 +221,17 @@ show_files_as_dataframe(table_location).display()
 
 # MAGIC %md
 # MAGIC 
+# MAGIC There is yet another way to see these files - it is by using `%fs ls file_path` magic command.
+# MAGIC You can try it out by filling in cell below with your table location path
+
+# COMMAND ----------
+
+# MAGIC %fs ls dbfs:/user/hive/warehouse/
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
 # MAGIC ### Explore Delta Log
 # MAGIC 
 # MAGIC We can see that next to data stored in parquet file we have a *_delta_log/* folder - this is where the Log files can be found
@@ -441,7 +452,8 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC select * from stores VERSION AS OF 2 where id = 'MEL02';
+# MAGIC select * from stores VERSION AS OF 2 
+# MAGIC where id = 'MEL02';
 
 # COMMAND ----------
 
@@ -490,11 +502,16 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC -- simulate change of address for store AKL01 and removal of store BNE02
+# MAGIC 
 # MAGIC update stores
 # MAGIC set hq_address = 'Domestic Terminal, AKL'
 # MAGIC where id = 'AKL01';
 # MAGIC 
-# MAGIC SELECT * FROM table_changes('stores', 6) -- Note that we increment version by 1 due to UPDATE statement above
+# MAGIC delete from stores
+# MAGIC where id = 'BNE02';
+# MAGIC 
+# MAGIC SELECT * FROM table_changes('stores', 6, 7) -- Note that we increment versions due to UPDATE statements above
 
 # COMMAND ----------
 
@@ -549,13 +566,9 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC create table stores_clone_shallow SHALLOW CLONE stores
-
-# COMMAND ----------
-
-# MAGIC %sql
+# MAGIC -- Note that no files are copied
 # MAGIC 
-# MAGIC describe history stores_clone_shallow;
+# MAGIC create table stores_clone_shallow SHALLOW CLONE stores
 
 # COMMAND ----------
 
@@ -569,6 +582,7 @@ show_files_as_dataframe(stores_data_path).display();
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC 
 # MAGIC select * from stores
 
 # COMMAND ----------
@@ -605,7 +619,9 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC WHERE 
 # MAGIC   (is_member('NZ_team') and store_country = 'NZL')
 # MAGIC OR
-# MAGIC   (is_member('AU_team') and store_country = 'AUS');
+# MAGIC   (is_member('AU_team') and store_country = 'AUS')
+# MAGIC OR 
+# MAGIC   (is_member('admin') and id = 'SYD01');
 
 # COMMAND ----------
 

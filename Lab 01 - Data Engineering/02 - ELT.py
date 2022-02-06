@@ -35,7 +35,7 @@
 # MAGIC 
 # MAGIC ### Environment Setup
 # MAGIC 
-# MAGIC We will be using Databricks Notebooks workflow[https://docs.databricks.com/notebooks/notebook-workflows.html] element to set up environment for this exercise. 
+# MAGIC We will be using [Databricks Notebooks workflow](https://docs.databricks.com/notebooks/notebook-workflows.html) element to set up environment for this exercise. 
 # MAGIC 
 # MAGIC `dbutils.notebook.run()` command will run another notebook and return its output to be used here.
 # MAGIC 
@@ -88,6 +88,11 @@ spark.sql(f"USE {database_name};")
 # MAGIC ## ![ ](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png) Delta Architecture
 # MAGIC 
 # MAGIC <img src="https://delta.io/wp-content/uploads/2019/04/Delta-Lake-marketecture-0423c.png" width=1012/>
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC <img src="https://drive.google.com/uc?export=download&id=1cZJCR5Z_9VDG05u0VfKplDjk7k5r6Y7I" width=1012/>
 
 # COMMAND ----------
 
@@ -252,9 +257,9 @@ if refresh_autoloader_datasets:
 # COMMAND ----------
 
 # Set up the stream to begin reading incoming files from the autoloader_ingest_path location.
-df =spark.readStream.format('cloudFiles') \
+df = spark.readStream.format('cloudFiles') \
   .option('cloudFiles.format', 'json') \
-  .option("cloudFiles.schemaHints", "ts long, SaleID string") \
+  .option("cloudFiles.schemaHints", "ts long, exported_ts long, SaleID string") \
   .option('cloudFiles.schemaLocation', schema_path) \
   .load(autoloader_ingest_path) \
   .withColumn("file_path",F.input_file_name()) \
@@ -273,7 +278,7 @@ batch_autoloader = df.writeStream \
 
 # MAGIC %md
 # MAGIC 
-# MAGIC Wait for the Autoloader Stream to finish and check how many records got inserted - calculated column `file_path` is a good way to see it
+# MAGIC Wait for the Autoloader cell to finish and check how many records got inserted - calculated column `file_path` is a good way to see it
 
 # COMMAND ----------
 
@@ -282,6 +287,17 @@ batch_autoloader = df.writeStream \
 # MAGIC select file_path, count(*) number_of_records
 # MAGIC from bronze_sales
 # MAGIC group by file_path;
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC If we have new data files arriving - rerunning autoloader cell will only process those yet unseen files. 
+# MAGIC You can try it out by running `get_incremental_data(autoloader_ingest_path, 'SYD01','2022-01-01')` and then re-running autoloader cell.
+
+# COMMAND ----------
+
+get_incremental_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # COMMAND ----------
 
@@ -297,63 +313,6 @@ batch_autoloader = df.writeStream \
 
 # COMMAND ----------
 
-# MAGIC %md 
-# MAGIC ### Schema Evolution
-# MAGIC 
-# MAGIC Let's simulate SYD01 location uploading a new data file by running a custom python function. After data is generated - run the same autoloader script again (make sure to NOT delete checkpoint files this time).
-# MAGIC 
-# MAGIC This newly generated dataset will have a new column `exported_ts` with a timestamp value of when data was exported from our source system.
-
-# COMMAND ----------
-
-get_incremental_data(autoloader_ingest_path, 'SYD01','2022-01-01') 
-
-# COMMAND ----------
-
-# Set up the stream to begin reading incoming files from the autoloader_ingest_path location.
-df = spark.readStream.format('cloudFiles') \
-  .option('cloudFiles.format', 'json') \
-  .option("cloudFiles.schemaHints", "ts long, SaleID string") \
-  .option('cloudFiles.schemaLocation', schema_path) \
-  .load(autoloader_ingest_path) \
-  .withColumn("file_path",F.input_file_name()) \
-  .withColumn("inserted_at", F.current_timestamp()) 
-
-
-batch_autoloader = df.writeStream \
-  .format('delta') \
-  .option('checkpointLocation', checkpoint_path) \
-  .option("mergeSchema", "true") \
-  .option("path", write_path) \
-  .trigger(once=True) \
-  .table('bronze_sales')
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC Why did the query in a cell above fail?
-# MAGIC 
-# MAGIC Over time data sources schema can change. In traditional ETL that would mean changing the scripts and loosing all new data up before the change is executed.
-# MAGIC 
-# MAGIC Autoloader can automatically pick up new columns - run the cell above again and check what is the bronze_sales table columns are like now.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select file_path, count(*) number_of_records
-# MAGIC from bronze_sales
-# MAGIC group by file_path;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from bronze_sales order by inserted_at desc
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC 
 # MAGIC You can schedule autoloder to run on required schedule (e.g. every night) and it will always process files uploaded since last run.
@@ -365,9 +324,9 @@ batch_autoloader = df.writeStream \
 # COMMAND ----------
 
 # Set up the stream to begin reading incoming files from the autoloader_ingest_path location.
-df =spark.readStream.format('cloudFiles') \
+df = spark.readStream.format('cloudFiles') \
   .option('cloudFiles.format', 'json') \
-  .option("cloudFiles.schemaHints", "ts long, SaleID string") \
+  .option("cloudFiles.schemaHints", "ts long, exported_ts long, SaleID string") \
   .option('cloudFiles.schemaLocation', schema_path) \
   .load(autoloader_ingest_path) \
   .withColumn("file_path",F.input_file_name()) \
@@ -448,7 +407,7 @@ spark.sql("drop table if exists silver_sales;")
 spark.sql(f"""
 create table silver_sales 
 using delta
-location '{bronze_table_path}silver_sales'
+location '{silver_table_path}silver_sales'
 as
 select * from v_silver_sales;
 """)
@@ -504,7 +463,7 @@ spark.sql("drop table if exists silver_sale_items");
 spark.sql(f"""
 create table silver_sale_items
 using delta
-location '{bronze_table_path}silver_sale_items'
+location '{silver_table_path}silver_sale_items'
 as
 select * from v_silver_sale_items;
 """)
@@ -552,7 +511,7 @@ spark.conf.set("spark.databricks.delta.optimize.maxFileSize", 52428800)
 # MAGIC %sql
 # MAGIC 
 # MAGIC select * from silver_sale_items 
-# MAGIC where sale_id = '002be97c-e70c-4ddd-9c5d-e9cce8bb5771';
+# MAGIC where sale_id = '00139294-b5c5-4af1-9b4c-181c1911ad16';
 
 # COMMAND ----------
 
@@ -562,11 +521,13 @@ spark.conf.set("spark.databricks.delta.optimize.maxFileSize", 52428800)
 
 # COMMAND ----------
 
-dbutils.fs.ls(f"{bronze_table_path}silver_sale_items/_delta_log/")
+dbutils.fs.ls(f"{silver_table_path}silver_sale_items/_delta_log/")
 
 # COMMAND ----------
 
-spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValues from json.`{bronze_table_path}silver_sale_items/_delta_log/00000000000000000001.json` where add is not null").display()
+# Explore the latest log file for our table
+
+spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValues from json.`{silver_table_path}silver_sale_items/_delta_log/00000000000000000001.json` where add is not null").display()
 
 # COMMAND ----------
 
@@ -574,9 +535,16 @@ spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValue
 # MAGIC 
 # MAGIC ### MERGE
 # MAGIC 
-# MAGIC For a given day store sent us records twice - second time was to close all pending sales.
+# MAGIC In our demo scenario, a given day store sent us records twice. They have decided to close all pending sales and re-send them to update sale status in the lakehouse.
 # MAGIC 
 # MAGIC Make sure your autoloader is still running in streaming mode (or start it again) to process these new records.
+
+# COMMAND ----------
+
+if streaming_autoloader.isActive:
+  print("autoloader still running")
+else:
+  print("autoloader is not running. Please run cell 27 again.")
 
 # COMMAND ----------
 
@@ -598,9 +566,12 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC -- use rescued data to update ts column values
+# MAGIC 
 # MAGIC update bronze_sales
 # MAGIC set ts = unix_timestamp(_rescued_data:ts)
-# MAGIC where _rescued_data is not null
+# MAGIC where _rescued_data is not null 
+# MAGIC and ts is null
 
 # COMMAND ----------
 
@@ -621,6 +592,8 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC 
+# MAGIC -- update Silver table with change values and keep single row for each sale transaction by using MERGE
 # MAGIC 
 # MAGIC merge into silver_sales target
 # MAGIC    using v_silver_sales source
@@ -677,8 +650,13 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC 
-# MAGIC select * from gold_top_customers
+# MAGIC -- get top 3 customers for each store
+# MAGIC with ranked_customers as (
+# MAGIC select store_id, name as customer_name, total_spend as customer_spend, rank() over (partition by store_id order by total_spend desc) as customer_rank 
+# MAGIC from gold_top_customers )
+# MAGIC select * from ranked_customers
+# MAGIC where customer_rank <= 3
+# MAGIC order by store_id, customer_rank
 
 # COMMAND ----------
 
