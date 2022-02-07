@@ -17,6 +17,8 @@ ORDER BY from_unixtime(ts, "yyyy-MM-dd")
 
 # COMMAND ----------
 
+import time
+
 def get_incremental_data(ingest_path, location, date):
     df = spark.sql(f"""
   select CustomerID, Location, OrderSource, PaymentMethod, STATE, SaleID, SaleItems, ts, unix_timestamp() as exported_ts from {database_name}_aux.jan_sales
@@ -27,6 +29,7 @@ where location = '{location}' and ts_date = '{date}'
     .write \
     .mode('overwrite') \
     .json(f"{ingest_path}{location}/{date}/daily_sales.json")
+    time.sleep(5)
  
   
 def get_fixed_records_data(ingest_path, location, date):
@@ -40,3 +43,4 @@ and state = 'PENDING'
   .write \
   .mode('overwrite') \
   .json(f"{ingest_path}{location}/{date}/updated_daily_sales.json")
+  time.sleep(2.4)

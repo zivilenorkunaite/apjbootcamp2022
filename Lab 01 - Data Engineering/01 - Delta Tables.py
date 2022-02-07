@@ -446,7 +446,7 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC VACUUM stores RETAIN 0 HOURS
+# MAGIC VACUUM stores
 
 # COMMAND ----------
 
@@ -454,6 +454,12 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC 
 # MAGIC select * from stores VERSION AS OF 2 
 # MAGIC where id = 'MEL02';
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC DESCRIBE HISTORY stores
 
 # COMMAND ----------
 
@@ -511,7 +517,7 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC delete from stores
 # MAGIC where id = 'BNE02';
 # MAGIC 
-# MAGIC SELECT * FROM table_changes('stores', 6, 7) -- Note that we increment versions due to UPDATE statements above
+# MAGIC SELECT * FROM table_changes('stores', 8, 9) -- Note that we increment versions due to UPDATE statements above
 
 # COMMAND ----------
 

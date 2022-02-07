@@ -49,9 +49,9 @@ local_data_path = setup_responses[0]
 dbfs_data_path = setup_responses[1]
 database_name = setup_responses[2]
 
-bronze_table_path = f"{dbfs_data_path}tables/bronze/"
-silver_table_path = f"{dbfs_data_path}tables/silver/"
-gold_table_path = f"{dbfs_data_path}tables/gold/"
+bronze_table_path = f"{dbfs_data_path}tables/bronze"
+silver_table_path = f"{dbfs_data_path}tables/silver"
+gold_table_path = f"{dbfs_data_path}tables/gold"
 
 autoloader_ingest_path = f"{dbfs_data_path}/autoloader_ingest/"
 
@@ -265,20 +265,22 @@ df = spark.readStream.format('cloudFiles') \
   .withColumn("file_path",F.input_file_name()) \
   .withColumn("inserted_at", F.current_timestamp()) 
 
-
 batch_autoloader = df.writeStream \
   .format('delta') \
   .option('checkpointLocation', checkpoint_path) \
   .option("mergeSchema", "true") \
-  .option("path", write_path) \
   .trigger(once=True) \
-  .table('bronze_sales')
+  .start(write_path)
+
+batch_autoloader.awaitTermination()
+
+spark.sql(f"create table bronze_sales location '{write_path}'")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC 
-# MAGIC Wait for the Autoloader cell to finish and check how many records got inserted - calculated column `file_path` is a good way to see it
+# MAGIC Check how many records were inserted to `bronze_sales` table - calculated column `file_path` is a good way to see it
 
 # COMMAND ----------
 
@@ -407,7 +409,7 @@ spark.sql("drop table if exists silver_sales;")
 spark.sql(f"""
 create table silver_sales 
 using delta
-location '{silver_table_path}silver_sales'
+location '{silver_table_path}/silver_sales'
 as
 select * from v_silver_sales;
 """)
@@ -463,7 +465,7 @@ spark.sql("drop table if exists silver_sale_items");
 spark.sql(f"""
 create table silver_sale_items
 using delta
-location '{silver_table_path}silver_sale_items'
+location '{silver_table_path}/silver_sale_items'
 as
 select * from v_silver_sale_items;
 """)
@@ -521,13 +523,13 @@ spark.conf.set("spark.databricks.delta.optimize.maxFileSize", 52428800)
 
 # COMMAND ----------
 
-dbutils.fs.ls(f"{silver_table_path}silver_sale_items/_delta_log/")
+dbutils.fs.ls(f"{silver_table_path}/silver_sale_items/_delta_log/")
 
 # COMMAND ----------
 
 # Explore the latest log file for our table
 
-spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValues from json.`{silver_table_path}silver_sale_items/_delta_log/00000000000000000001.json` where add is not null").display()
+spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValues from json.`{silver_table_path}/silver_sale_items/_delta_log/00000000000000000001.json` where add is not null").display()
 
 # COMMAND ----------
 
