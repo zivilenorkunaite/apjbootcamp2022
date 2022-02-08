@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC 
-# MAGIC # AP Juice Lakehouse Platform
+# MAGIC # APJuice Lakehouse Platform
 # MAGIC <img src="https://drive.google.com/uc?export=view&id=1ztmSjkyi-FdzUdxakFbjIDS1HAhePN1s" style="width: 650px; max-width: 100%; height: auto" />
 
 # COMMAND ----------
@@ -628,12 +628,11 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 # MAGIC 
 # MAGIC create table gold_country_sales 
 # MAGIC as 
-# MAGIC select s.store_id, ss.unique_customer_id, c.name, sum(product_cost) total_spend 
+# MAGIC select l.country_code, date_format(sales.ts, 'yyyy-MM') as sales_month, sum(product_cost) as total_sales, count(distinct sale_id) as number_of_sales
 # MAGIC from silver_sale_items s 
-# MAGIC   join silver_sales ss on s.sale_id = ss.id
-# MAGIC   join dim_customers c on ss.unique_customer_id = c.unique_id
-# MAGIC where ss.unique_customer_id is not null 
-# MAGIC group by s.store_id, ss.unique_customer_id, c.name
+# MAGIC   join dim_locations l on s.store_id = l.id
+# MAGIC   join silver_sales sales on s.sale_id = sales.id
+# MAGIC group by l.country_code, date_format(sales.ts, 'yyyy-MM');
 
 # COMMAND ----------
 

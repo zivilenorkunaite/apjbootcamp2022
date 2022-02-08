@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC 
-# MAGIC # AP Juice Lakehouse Platform
+# MAGIC # APJuice Lakehouse Platform
 # MAGIC 
 # MAGIC <img src="https://drive.google.com/uc?export=view&id=1ztmSjkyi-FdzUdxakFbjIDS1HAhePN1s" style="width: 650px; max-width: 100%; height: auto" />
 
