@@ -14,7 +14,7 @@
 # MAGIC Some of the things we will look at are:
 # MAGIC * Using Auto-loader
 # MAGIC    * Batch and Stream Ingestion
-# MAGIC    * Schema Evolution
+# MAGIC    * Rescued data
 # MAGIC * Optimizing tables for specific query pattern using OPTIMIZE and ZORDER
 # MAGIC * Incremental updates using MERGE
 # MAGIC * Scheduling jobs
@@ -24,9 +24,9 @@
 # MAGIC %md
 # MAGIC ### APJ Data Sources
 # MAGIC 
-# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, AP Juice.
+# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, APJuice.
 # MAGIC 
-# MAGIC AP Juice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
+# MAGIC APJuice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
 # MAGIC 
 # MAGIC For this part of the exercise we will be processing 3 existing dimensions and sales transactions datasets. Files will be a mix of `csv` and `json` files and our goal is to have **incremental updates** for sales table.
 
@@ -93,7 +93,7 @@ spark.sql(f"USE {database_name};")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://drive.google.com/uc?export=download&id=1cZJCR5Z_9VDG05u0VfKplDjk7k5r6Y7I" width=1012/>
+# MAGIC <img src="https://drive.google.com/uc?export=download&id=1TW_IbaaSMBYzMHbev6oTgoTWZVG2amUv" width=1012/>
 
 # COMMAND ----------
 
@@ -275,7 +275,7 @@ batch_autoloader = df.writeStream \
 
 batch_autoloader.awaitTermination()
 
-spark.sql(f"create table bronze_sales location '{write_path}'")
+spark.sql(f"create table if not exists bronze_sales location '{write_path}'")
 
 # COMMAND ----------
 

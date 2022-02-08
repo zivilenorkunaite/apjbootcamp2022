@@ -28,9 +28,9 @@
 # MAGIC %md
 # MAGIC ### APJ Data Sources
 # MAGIC 
-# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, AP Juice.
+# MAGIC For this exercise we will be starting to implement Lakehouse platform for our company, APJuice.
 # MAGIC 
-# MAGIC AP Juice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
+# MAGIC APJuice has been running for a while and we already had multiple data sources that could be used. To begin with, we have decided to focus on sales transactions that are uploaded from our store locations directly to cloud storage account. In addition to sales data we already had couple of dimension tables that we have exported to files and uploaded to cloud storage as well.
 # MAGIC 
 # MAGIC For the first part of the exercise we will be focusing on an export of Store Locations table that has been saved as `csv` file.
 
@@ -107,20 +107,9 @@ display(df)
 
 # COMMAND ----------
 
-# MAGIC %python
-# MAGIC # Creating a Temporary View will allow us to use SQL to interact with data
-# MAGIC 
-# MAGIC df.createOrReplaceTempView("stores_csv_file")
+# Creating a Temporary View will allow us to use SQL to interact with data
 
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC You can run SQL queries in the same notebook by using `%sql` magic command to change language just for that cell. You can also change language for all cells in this notebook by using default language setting.
-# MAGIC 
-# MAGIC 
-# MAGIC 
-# MAGIC ![change language](https://docs.databricks.com/_images/change-default-language.png)
+df.createOrReplaceTempView("stores_csv_file")
 
 # COMMAND ----------
 
@@ -557,12 +546,6 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC %sql
 # MAGIC 
 # MAGIC create table stores_clone DEEP CLONE stores VERSION AS OF 3 -- you can specify timestamp here instead of a version
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC describe extended stores_clone;
 
 # COMMAND ----------
 
