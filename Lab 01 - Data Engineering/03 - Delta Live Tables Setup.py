@@ -17,7 +17,7 @@
 
 # MAGIC %md
 # MAGIC 
-# MAGIC <img src="https://databricks.com/wp-content/uploads/2021/05/Pipeline-Graph.png" width=1012/>
+# MAGIC <img src="https://drive.google.com/uc?export=download&id=1yqZxj88veKc0hCMaQAq6HA7uAQsJwByk" width=1012/>
 
 # COMMAND ----------
 
