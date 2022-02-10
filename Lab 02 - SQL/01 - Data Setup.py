@@ -237,10 +237,6 @@ get_incremental_data(autoloader_ingest_path, 'SYD01','2022-01-07')
 
 # COMMAND ----------
 
-# MAGIC %fs ls dbfs:/FileStore/deepak_sekar/deltademoasset/autoloader_ingest/
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC 
 # MAGIC You can schedule autoloder to run on required schedule (e.g. every night) and it will always process files uploaded since last run.
