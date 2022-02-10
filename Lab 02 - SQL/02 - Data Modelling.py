@@ -28,13 +28,13 @@
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC USE deepak_sekar_ap_juice_db
+# MAGIC USE <>
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
-# MAGIC Show tables in deepak_sekar_ap_juice_db
+# MAGIC Show tables in <>
 
 # COMMAND ----------
 
