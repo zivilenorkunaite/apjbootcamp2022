@@ -69,4 +69,22 @@ table_spark.write.format("delta").mode('overwrite').saveAsTable('phytochemicals_
 
 # COMMAND ----------
 
+db_name = "anz_bootcamp3_ml_db"
+spark.sql(f"USE {db_name}")
+collected_data = spark.read.table("phytochemicals_quality")
+
+# COMMAND ----------
+
+collected_data.coalesce(1).write.format("csv").save("dbfs:/FileStore/ajmal_aziz/bootcamp_data/orange_chemicals_save.csv")
+
+# COMMAND ----------
+
+collected_data.write.format("csv").save("dbfs:/FileStore/ajmal_aziz/bootcamp_data/orange_chemicals.csv")
+
+# COMMAND ----------
+
+collected_data_pandas = collected_data.toPandas()
+
+# COMMAND ----------
+
 

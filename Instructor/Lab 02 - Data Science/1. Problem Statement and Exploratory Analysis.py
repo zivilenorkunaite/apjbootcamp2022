@@ -39,6 +39,14 @@
 
 # COMMAND ----------
 
+# MAGIC %run "./Utils/Fetch_User_Metadata"
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
 # DBTITLE 1,Let's import the collected data from our Delta lake
 db_name = "anz_bootcamp3_ml_db"
 spark.sql(f"USE {db_name}")
@@ -65,35 +73,30 @@ display(collected_data)
 
 # COMMAND ----------
 
-import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-plt.figure(figsize = (26, 7))
-
-corr = collected_data.to_pandas_on_spark.corr()
-mask = np.triu(np.ones_like(corr, dtype = bool))
-
-sns.heatmap(corr, mask = mask, annot = True, fmt = '0.2g', linewidths = 1)
-plt.show()
-
-# COMMAND ----------
-
 # DBTITLE 1,We can also use the plotly within our notebooks 
 import plotly.express as ps
 import plotly.express as px
+import plotly.io as pio
 
-collected_data = collected_data.to_pandas_on_spark()
-fig = px.scatter(collected_data,
-                 x="sepal_width",
-                 y="",
+# Plotting preferences
+pio.templates.default = "plotly_white"
+
+# We can easily convert our dataframe to pandas
+collected_data_pd = collected_data.toPandas()
+
+fig = px.scatter(collected_data_pd,
+                 x="vitamin_c",
+                 y="enzymes",
                  color="quality")
+
+fig.update_layout(font_family="Arial",
+                  title="Enzymes as a function of Vitaminc C",
+                  yaxis_title="Enzymes",
+                  xaxis_title="Vitamin C",
+                  legend_title_text="Rated Quality",
+                  font=dict(size=20))
+
 fig.show()
-
-# COMMAND ----------
-
-# DBTITLE 1,Including more complicated charts within Plotly
-
 
 # COMMAND ----------
 

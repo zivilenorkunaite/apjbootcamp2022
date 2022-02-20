@@ -1,12 +1,11 @@
 # Databricks notebook source
 # MAGIC %md-sandbox
 # MAGIC 
+# MAGIC # Let the Machines Learn! 
+# MAGIC 
 # MAGIC <div style="float:right">
 # MAGIC   <img src="files/ajmal_aziz/bootcamp_data/machine_learning_model.png" width="1000px">
 # MAGIC </div>
-# MAGIC 
-# MAGIC 
-# MAGIC # Let the Machines Learn! 
 # MAGIC 
 # MAGIC 
 # MAGIC We are going to train an a model to predict the quality of an orange given the chemical makeup of the orange. This will help us find the key indicators of quality.
@@ -20,12 +19,16 @@
 
 # COMMAND ----------
 
+# MAGIC %run "../Lab 02 - Data Science/Utils/Fetch_User_Metadata"
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Generating a training set from our Feature Store
 
 # COMMAND ----------
 
-# DBTITLE 1,Our original data set does not have our calculated features
+# DBTITLE 1,Note: our original data set does not have our calculated features
 DATABASE_NAME = "anz_bootcamp3_ml_db"
 spark.sql(f"USE {DATABASE_NAME}")
 data = spark.table("experiment_results")
@@ -33,7 +36,7 @@ display(data)
 
 # COMMAND ----------
 
-# DBTITLE 1,Split our data into training, validation (for tuning), and test (for reporting purposes only)
+# DBTITLE 1,First: split our data into training, validation (for tuning), and test (for reporting purposes only)
 from sklearn.model_selection import train_test_split
 
 train_portion = 0.7
@@ -57,7 +60,8 @@ feature_table = "feature_store_apjuice.oj_experiment"
 
 feature_lookup = FeatureLookup(
   table_name=feature_table,
-  #          Pull our calculated features
+  #
+  #          Pull our calculated features from our feature store
   #             |
   #             |
   feature_names=["h_concentration", "acidity_ratio"],
@@ -66,7 +70,7 @@ feature_lookup = FeatureLookup(
 
 # COMMAND ----------
 
-# DBTITLE 1,We generate a training and testing data set using our feature lookup
+# DBTITLE 1,We generate a training and testing data set using our feature lookups
 training_set = fs.create_training_set(
   df=spark.createDataFrame(train_df),
   feature_lookups=[feature_lookup],
@@ -186,22 +190,39 @@ rf_model
 # MAGIC %md-sandbox
 # MAGIC ## Databricks uses mlflow for experiment tracking, logging, and production
 # MAGIC 
-# MAGIC We are going to use the sklearn 'flavour' in mlflow
-# MAGIC [some speil about mlflow]
 # MAGIC <div style="float:right">
 # MAGIC   <img src="https://databricks.com/wp-content/uploads/2020/06/blog-mlflow-model-1.png" width="1000px">
 # MAGIC </div>
+# MAGIC 
+# MAGIC We are going to use the sklearn 'flavour' in mlflow. A couple of things to note about Mlflow:
+# MAGIC 
+# MAGIC - Mlflow is going to help orchestrate the end-to-end process for our machine learning use-case.
+# MAGIC - **runs**: MLflow Tracking is organized around the concept of runs, which are executions of some piece of data science code.
+# MAGIC - **experiments**: MLflow allows you to group runs under experiments, which can be useful for comparing runs intended to tackle a particular task.
+# MAGIC 
+# MAGIC 👇 We are going to create an experiment to store our machine learning model runs
+
+# COMMAND ----------
+
+# DBTITLE 1,We create a blank experiment to log our runs to
+import mlflow
+
+experiment_name = "Orange Quality Prediction"
+experiment_path = os.path.join(PROJECT_PATH, experiment_name)
+experiment_id = mlflow.create_experiment(experiment_path)
+
+mlflow.set_experiment(experiment_path)
+displayHTML(f"<h4>Make sure you can see your experiment on <a href='#mlflow/experiments/{experiment_id}'>#mlflow/experiments/{experiment_id}</a></h4>")
 
 # COMMAND ----------
 
 # DBTITLE 1,We use mlflow's sklearn flavour to log and evaluate our model as an experiment run
-import mlflow
 import pandas as pd
 
 # Enable automatic logging of input samples, metrics, parameters, and models
 mlflow.sklearn.autolog(log_input_examples=True, silent=True)
 
-with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
+with mlflow.start_run(run_name="random_forest_pipeline", experiment_id=experiment_id) as mlflow_run:
     # Fit our estimator
     rf_model.fit(X_training, y_training)
     
@@ -218,23 +239,19 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## Logging SHAP values
-# MAGIC We have flexibility over the artefacts we want to log. Let's log a simple SHAP plot to demostrate this capability.
+# MAGIC ## Logging Artefacts in Runs (Partial Dependence Plot)
+# MAGIC We have flexibility over the artefacts we want to log. Let's log a simple PDP for the citric acid feature.
 
 # COMMAND ----------
 
-from shap import KernelExplainer, summary_plot, plots
-
-def make_shap_values():
-    # Use Kernel SHAP to explain feature importance on the example from the validation set.
-    predict = lambda x: rf_model.predict(pd.DataFrame(x, columns=X_training.columns))
-    explainer = KernelExplainer(predict, train_sample, link="identity")
-    shap_values = explainer.shap_values(train_sample, l1_reg=False)
+pd_explainer = partial_dependence.PartialDependenceExplainer(estimator=rf_model)
+pd_explainer.fit(X_training, feature_name='citric_acid')
+pd_explainer.plot()
+plt.show()
 
 # COMMAND ----------
 
 # Enable automatic logging of input samples, metrics, parameters, and models
-mlflow.sklearn.autolog(log_input_examples=True, silent=True)
 
 with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
     # Fit our estimator
@@ -348,7 +365,7 @@ with mlflow.start_run(run_name='xgboost_models'):
 # COMMAND ----------
 
 # MAGIC %md-sandbox
-# MAGIC ## Custom mlflow pytorch flavour
+# MAGIC ## (Optional) Custom mlflow pytorch flavour
 # MAGIC 
 # MAGIC <div style="float:right"><img src="https://upload.wikimedia.org/wikipedia/commons/9/96/Pytorch_logo.png" width=250/></div>
 # MAGIC <div style="float:right"><img src="https://databricks.com/wp-content/uploads/2021/06/MLflow-logo-pos-TM-1.png" width=250/></div>

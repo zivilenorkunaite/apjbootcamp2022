@@ -15,7 +15,7 @@ display(data)
 
 # COMMAND ----------
 
-# DBTITLE 1,We can use our familiar pandas commands for data science
+# DBTITLE 1,We can use our familiar pandas commands for data science (without sacrificing scalability)
 import pyspark.pandas as ps
 raw_data = data.to_pandas_on_spark()
 
@@ -34,7 +34,7 @@ raw_data = raw_data.assign(h_concentration=lambda x: 1/(10**x["pH"]))
 
 # COMMAND ----------
 
-# DBTITLE 1,We now look at the distribution of our newly calculated feature
+# DBTITLE 1,We now look at the distribution of our newly calculated feature - looks good!
 import seaborn as sns
 import matplotlib.pyplot as plt
 
@@ -46,7 +46,7 @@ plt.show()
 
 # COMMAND ----------
 
-# DBTITLE 1,Additionally, we believe that the ratio of acidity to sugar may be a useful feature
+# DBTITLE 1,Our chemists also tell us that the ratio of acidity to sugar may be a useful predictor of quality
 raw_data = raw_data.assign(acidity_ratio=lambda x: x["citric_acid"]/x["residual_sugar"])
 sns.displot(raw_data["acidity_ratio"].to_numpy())
 plt.ylabel("Count")
@@ -57,8 +57,10 @@ plt.show()
 
 # DBTITLE 1,This distribution is quite skewed so we apply a log transformation - looks much better!
 import numpy as np
+
 raw_data = raw_data.assign(acidity_ratio=lambda x: np.log(x["citric_acid"]/x["residual_sugar"]))
 sns.displot(raw_data["acidity_ratio"].to_numpy())
+
 plt.ylabel("Count")
 plt.xlabel("Acidity ratio (no units)")
 plt.show()
@@ -99,7 +101,3 @@ fs.create_table(
 displayHTML("""
   <h3>Check out the <a href="/#feature-store/feature_store_apjuice.oj_experiment">feature store</a> to see where our features are stored.</h3>
 """)
-
-# COMMAND ----------
-
-
