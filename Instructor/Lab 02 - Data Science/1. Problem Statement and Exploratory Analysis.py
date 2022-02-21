@@ -39,7 +39,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run "./Utils/Fetch_User_Metadata"
+# MAGIC %run "./Utils/Setup-Datasets"
 
 # COMMAND ----------
 
