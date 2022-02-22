@@ -1,13 +1,19 @@
 # Databricks notebook source
 # MAGIC %md-sandbox
-# MAGIC # Model Serving
+# MAGIC # Model Serving and Model Registry
 # MAGIC 
-# MAGIC Let's turn our attention to the model deployment and serving aspect of the platform.
+# MAGIC <img src="https://github.com/QuentinAmbard/databricks-demo/raw/main/product_demos/mlops-end2end-flow-4.png" width="1200">
 # MAGIC 
+# MAGIC One of the primary challenges among data scientists and ML engineers is the absence of a central repository for models, their versions, and the means to manage them throughout their lifecycle.  
 # MAGIC 
-# MAGIC <div style="float:right">
-# MAGIC <img src="https://databricks.com/wp-content/uploads/2021/06/Three-Principles-for-Selecting-Machine-Learning-Platforms-blog-img-1.jpg" width=1000>
-# MAGIC </div>
+# MAGIC [The MLflow Model Registry](https://docs.databricks.com/applications/mlflow/model-registry.html) addresses this challenge and enables members of the data team to:
+# MAGIC <br><br>
+# MAGIC * **Discover** registered models, current stage in model development, experiment runs, and associated code with a registered model
+# MAGIC * **Transition** models to different stages of their lifecycle
+# MAGIC * **Deploy** different versions of a registered model in different stages, offering MLOps engineers ability to deploy and conduct testing of different model versions
+# MAGIC * **Test** models in an automated fashion
+# MAGIC * **Document** models throughout their lifecycle
+# MAGIC * **Secure** access and permission for model registrations, transitions or modifications
 
 # COMMAND ----------
 
@@ -23,17 +29,12 @@
 # MAGIC 1. Click Experiments on the LHS of the pane
 # MAGIC - Navigate to the notebook where the runs are recorded from earlier
 # MAGIC - Copy the Experiment ID from the top of the page and populate below 👇 
+# MAGIC 
+# MAGIC > Note: we could also easily use mlflow APIs to do this programmatically
 
 # COMMAND ----------
 
 experiment_id = 3530875234215041
-
-# Alternatively, 
-# import mlflow
-
-# experiment_name = 'Ajmal Aziz Orange Quality Prediction'
-# experiment_path = os.path.join(PROJECT_PATH, experiment_name)
-# experiment_id = mlflow.tracking.MlflowClient().get_experiment_by_name(experiment_path).experiment_id
 
 # COMMAND ----------
 
@@ -45,20 +46,41 @@ all_runs
 
 # COMMAND ----------
 
-# DBTITLE 1,Let's pick out our best run by order by the validation roc auc score
-from pprint import pprint
-
-best_run = mlflow.search_runs(
-  experiment_ids=[experiment_id],
-  filter_string='metrics.val_roc_auc_score > 0.5',
-  order_by=['metrics.val_roc_auc_score desc']
-).iloc[0]
-
-pprint(best_run)
+# MAGIC %md
+# MAGIC ### How to Use the Model Registry
+# MAGIC Typically, data scientists who use MLflow will conduct many experiments, each with a number of runs that track and log metrics and parameters. During the course of this development cycle, they will select the best run within an experiment and register its model with the registry.  Think of this as **committing** the model to the registry, much as you would commit code to a version control system.  
+# MAGIC 
+# MAGIC The registry defines several model stages: `None`, `Staging`, `Production`, and `Archived`. Each stage has a unique meaning. For example, `Staging` is meant for model testing, while `Production` is for models that have completed the testing or review processes and have been deployed to applications. 
+# MAGIC 
+# MAGIC Users with appropriate permissions can transition models between stages.
 
 # COMMAND ----------
 
-# DBTITLE 1,Let's start by registering our model
+# DBTITLE 1,🤩 Let's pick out our best run by order by the validation roc auc score 
+best_run = mlflow.search_runs(
+  experiment_ids=[experiment_id],
+  filter_string="status = 'FINISHED'",
+  order_by=["metrics.val_roc_auc_score desc"],
+  max_results=1
+)
+
+best_run
+
+# COMMAND ----------
+
+# DBTITLE 1,🥺 Similarly, let's pick our worse performing model out of the heap 
+worst_run = mlflow.search_runs(
+  experiment_ids=[experiment_id],
+  filter_string="status = 'FINISHED'",
+  order_by=["metrics.val_roc_auc_score asc"],
+  max_results=1
+)
+
+worst_run
+
+# COMMAND ----------
+
+# DBTITLE 1,Let's begin by registering a model with a unique model name in the model registry
 from mlflow.tracking import MlflowClient
 
 client = MlflowClient()
@@ -68,48 +90,49 @@ print(f'Will be using model name: "{model_name}"')
 
 client.create_registered_model(model_name)
 
-displayHTML(f"<h2>Check the model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h2>")
+displayHTML(f"<h4>Check the model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
+
+# COMMAND ----------
+
+# DBTITLE 1,We now register the worse performing model as version 1
+mlflow.register_model(f'runs:/{worst_run.iloc[0]["run_id"]}/model', model_name)
+
+displayHTML(f"<h4>This model will by default be in the version None stage. Check the model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
 
 # COMMAND ----------
 
 # DBTITLE 1,We can register the best model in our model registry for the rest of the team to see
-mlflow.register_model(f'runs:/{best_run["run_id"]}/model', model_name)
+mlflow.register_model(f'runs:/{best_run.iloc[0]["run_id"]}/model', model_name)
+
+displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
-
-# COMMAND ----------
-
-
+# MAGIC %md-sandbox
+# MAGIC ## Let's now promote our model to production
+# MAGIC 
+# MAGIC <div style="float:right">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/promote_model.gif" width="700px">
+# MAGIC </div>
+# MAGIC 
+# MAGIC Now go ahead and observe the model in the Model Registry:
+# MAGIC 0. Ensure that you are in the Machine Learning persona on the LHS
+# MAGIC - Click "Models" on the left sidebar
+# MAGIC - Find your Model (if your username is **```"yan_moiseev"```**, you should see it as **````orange_experiment_yan_moiseev````**)
+# MAGIC - Click on "Version 2"
+# MAGIC - Click on "Stage", transition it to "Production"
 
 # COMMAND ----------
 
-# DBTITLE 1,We can use the mlflow API (or do this manually) to transition our model to production.
-import mlflow
+production_model = client.get_latest_versions(model_name, ['Production'])[0]
+model = mlflow.sklearn.load_model(production_model.source)
 
-client = mlflow.tracking.MlflowClient()
+# COMMAND ----------
 
-model_name = 'Pytorch Model'
-model_version = 1
-registered_model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{model_version}")
-
-# #                                                                               New stage
-# #                                                    Previous version           |
-# #                                                         |                     |
-# client.transition_model_version_stage(model_name, model_version, stage="Production", archive_existing_versions=True)
+# Now we can generate predictions from our feature store
+df = spark.read.table(f"{DATABASE_NAME}.X_validation").toPandas()
+df['quality_predictions'] = model.predict(df)
+display(df)
 
 # COMMAND ----------
 
@@ -127,8 +150,8 @@ registered_model = mlflow.pyfunc.load_model(model_uri=f"models:/{model_name}/{mo
 
 # MAGIC %md-sandbox
 # MAGIC 
-# MAGIC ## Inference
-# MAGIC 
+# MAGIC ## Let's now register this model for real time inference
+# MAGIC <br>
 # MAGIC <div style="float:right">
 # MAGIC <img src="https://databricks.com//wp-content/uploads/2020/06/blog-mlflow-model-3.gif" >
 # MAGIC </div>

@@ -117,6 +117,10 @@ y_validation = (validation_data['quality'] == "Good").astype(int)
 numerical_features = X_training._get_numeric_data().columns.tolist()
 categorical_features = list(set(X_training.columns) - set(numerical_features))
 
+# Save into our database for future use
+spark.createDataFrame(X_validation).write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.X_training")
+spark.createDataFrame(X_training).write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.X_validation")
+
 # COMMAND ----------
 
 # DBTITLE 1,We define our processing pipeline, starting with our categorical columns
