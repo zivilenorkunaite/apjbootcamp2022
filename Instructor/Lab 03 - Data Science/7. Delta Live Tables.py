@@ -48,7 +48,7 @@ loaded_model = mlflow.pyfunc.spark_udf(spark, model_uri=production_model.source)
 
 # COMMAND ----------
 
-# DBTITLE 1,To ensure that our schema matches, we define the model features
+# DBTITLE 1,To ensure that our schema matches, we extract the model features
 model_features = loaded_model.metadata.get_input_schema().input_names()
 
 # COMMAND ----------
@@ -76,7 +76,7 @@ def get_validation_data():
 # COMMAND ----------
 
 @dlt.create_table(
-  comment="We also extract the validation data set from our database",  
+  comment="Inference performed on the training data",  
   table_properties={
     "quality": "gold"
   }    
@@ -87,7 +87,7 @@ def predict_training_data():
 # COMMAND ----------
 
 @dlt.create_table(
-  comment="We also extract the validation data set from our database",  
+  comment="Inference performed on the validation data",  
   table_properties={
     "quality": "gold"
   }    
@@ -98,10 +98,14 @@ def predict_validation_data():
 # COMMAND ----------
 
 @dlt.create_table(
-  comment="We also extract the validation data set from our database",  
+  comment="Both tables merged into one.",  
   table_properties={
     "quality": "gold"
   }    
 )
 def aggregate_datasets():
   return dlt.read("predict_training_data").union(dlt.read("predict_validation_data"))
+
+# COMMAND ----------
+
+

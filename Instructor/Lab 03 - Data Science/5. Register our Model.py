@@ -102,7 +102,7 @@ displayHTML(f"<h4>This model will by default be in the version None stage. Check
 # COMMAND ----------
 
 # DBTITLE 1,We can register the best model in our model registry for the rest of the team to see
-mlflow.register_model(f'runs:/{best_run.iloc[0]["run_id"]}/model', model_name)
+model_registered = mlflow.register_model(f'runs:/{best_run.iloc[0]["run_id"]}/model', model_name)
 
 displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
 
@@ -124,8 +124,26 @@ displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{
 
 # COMMAND ----------
 
+# We can also use the mlflow client to make this transition
+#                                                                             new stage
+#                                                        current version       |
+#                                                           |                  |
+client.transition_model_version_stage(model_name, model_registered.version, stage="Production", archive_existing_versions=True)
+
+# COMMAND ----------
+
+client.transition_model_version_stage(name=model_name, version=2, stage='Production')
+client.transition_model_version_stage(name=model_name, version=1, stage='Archived')
+
+# COMMAND ----------
+
 production_model = client.get_latest_versions(model_name, ['Production'])[0]
 model = mlflow.sklearn.load_model(production_model.source)
+
+# COMMAND ----------
+
+# MAGIC %md ### Pure pandas inference
+# MAGIC If we have a small dataset, we can also compute our segment using a single node and pandas API:
 
 # COMMAND ----------
 
@@ -157,7 +175,3 @@ spark.udf.register(
 # MAGIC <div style="float:right">
 # MAGIC <img src="https://databricks.com//wp-content/uploads/2020/06/blog-mlflow-model-3.gif" >
 # MAGIC </div>
-
-# COMMAND ----------
-
-

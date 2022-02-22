@@ -117,9 +117,21 @@ y_validation = (validation_data['quality'] == "Good").astype(int)
 numerical_features = X_training._get_numeric_data().columns.tolist()
 categorical_features = list(set(X_training.columns) - set(numerical_features))
 
+# COMMAND ----------
+
+# DBTITLE 1,💾 Save for future use
 # Save into our database for future use
-spark.createDataFrame(X_validation).write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.X_training")
-spark.createDataFrame(X_training).write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.X_validation")
+def save_to_db(df, name):
+  (spark.createDataFrame(df)
+        .write
+        .mode("overwrite")
+        .format("delta")
+        .saveAsTable(f"{DATABASE_NAME}.{name}")
+  )
+
+save_to_db(X_validation, "X_validation")
+save_to_db(X_training, "X_training")
+training_set.load_df().write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.training_set")
 
 # COMMAND ----------
 
@@ -394,6 +406,10 @@ with mlflow.start_run(run_name='xgboost_models'):
     max_evals=96,
     trials=spark_trials, 
   )
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
