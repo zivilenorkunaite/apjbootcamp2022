@@ -75,7 +75,7 @@ plt.show()
 # MAGIC %md-sandbox
 # MAGIC # Register Features into the Feature Store 
 # MAGIC 
-# MAGIC We now register our features into the feature store so others in APJuice can reuse our features for other experiments! The feature store will also make inference easier as the Delta table will record our transformations and reapply these during inferece. Orange you glad you chose Delta!
+# MAGIC We now register our features into the feature store so others in APJuice can reuse our features for other experiments! The feature store will also make inference easier as the Delta table will record our transformations and reapply these during inference. This applies to both batch and streaming inference. Orange (🍊) you glad you chose Delta!
 # MAGIC 
 # MAGIC A centralised feature store also allows for discoverability and reusability of our feature accross our organization, increasing team efficiency of data scientists. The feature store can bring traceability and governance in your deployments, knowing which model is dependent of which set of features.
 # MAGIC 
@@ -85,8 +85,8 @@ plt.show()
 # MAGIC Once our features are ready, we'll save them in Databricks Feature Store. Under the hood, features store are backed by a Delta Lake table.
 # MAGIC 
 # MAGIC 
-# MAGIC <div style="text-align:right">
-# MAGIC   <img src="files/ajmal_aziz/bootcamp_data/feature_store.png" width="1100px">
+# MAGIC <div style="text-align:bottom">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/feature_store.png" width="1100px">
 # MAGIC </div>
 
 # COMMAND ----------
@@ -97,7 +97,7 @@ from databricks import feature_store
 fs = feature_store.FeatureStoreClient()
 
 fs.create_table(
-  name=f"{DATABASE_NAME}.features_oj_experiment",
+  name=f"{DATABASE_NAME}.features_oj_prediction_experiment",
   primary_keys=["customer_id"],
   df=raw_data.to_spark(),
   description="""

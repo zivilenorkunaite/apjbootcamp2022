@@ -129,22 +129,24 @@ model = mlflow.sklearn.load_model(production_model.source)
 
 # COMMAND ----------
 
-# Now we can generate predictions from our feature store
-df = spark.read.table(f"{DATABASE_NAME}.X_validation").toPandas()
-df['quality_predictions'] = model.predict(df)
-display(df)
+# DBTITLE 1,Now we can generate predictions from the production version of the model
+spark.sql(f"USE {DATABASE_NAME}")
+valid_df = spark.read.table("X_validation").toPandas()
+valid_df['quality_predictions'] = model.predict(valid_df)
+display(valid_df)
 
 # COMMAND ----------
 
-
+# DBTITLE 1,We can register our model as spark UDF for distributed inference
+spark.udf.register(
+  'quality_prediction_model', 
+  mlflow.pyfunc.spark_udf(spark, model_uri=production_model.source)
+)
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
-
+# MAGIC %sql 
+# MAGIC select *, quality_prediction_model(*) as quality_predictions from X_validation
 
 # COMMAND ----------
 

@@ -66,17 +66,49 @@
 # MAGIC 
 # MAGIC A testing notebook has been created by the ML Engineer team (we'll cover that in details soon).
 # MAGIC 
-# MAGIC To accept the STATING request, we'll run this notebook as a Databricks Job whenever we receive a request to move a model to STAGING.
+# MAGIC To accept the STAGING request, we'll run this notebook as a Databricks Job whenever we receive a request to move a model to STAGING.
 # MAGIC 
 # MAGIC The job will be in charge to validate or reject the transition upon completion.
 
 # COMMAND ----------
 
-#DEMO SETUP
-#For this demo, the job is programatically created if it doesn't exist. See ./_resources/API_Helpers for more details
-job_id = get_churn_staging_job_id()
+# DBTITLE 1,You can use the jobs API to programmatically create the staging job
+# The job is programatically created if it doesn't exist
+job_id = get_model_staging_job_id()
+
 #This should be run once. For the demo We'll reset other webhooks to prevent from duplicated call
-reset_webhooks(model_name = "field_demos_customer_churn")
+reset_webhooks(model_name = f"orange_experiment_{USERNAME}")
 
 #Once we have the id of the job running the tests, we add the hook:
-create_job_webhook(model_name = "field_demos_customer_churn", job_id = job_id)
+create_job_webhook(model_name = f"orange_experiment_{USERNAME}", job_id = job_id)
+
+# COMMAND ----------
+
+import urllib 
+import json 
+import requests, json
+
+def create_notification_webhook(model_name, slack_url):
+  
+  trigger_slack = json.dumps({
+  "model_name": model_name,
+  "events": ["TRANSITION_REQUEST_CREATED"],
+  "description": "Notify the MLOps team that a model is requested to move to staging.",
+  "status": "ACTIVE",
+  "http_url_spec": {
+    "url": slack_url
+  }
+  })
+  response = mlflow_call_endpoint("registry-webhooks/create", method = "POST", body = trigger_slack)
+  return(response)
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Notification
+# MAGIC We also want to send slack notification when the a model change from one stage to another:
+
+# COMMAND ----------
+
+create_notification_webhook(model_name = f"orange_experiment_{USERNAME}", slack_url = "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX")

@@ -50,7 +50,7 @@ from databricks.feature_store import FeatureLookup, FeatureStoreClient
 
 fs = FeatureStoreClient()
 
-feature_table = f"{DATABASE_NAME}.features_oj_experiment"
+feature_table = f"{DATABASE_NAME}.features_oj_prediction_experiment"
 
 feature_lookup = FeatureLookup(
   table_name=feature_table,
@@ -225,7 +225,7 @@ rf_model
 # DBTITLE 1,We create a blank experiment to log our runs to
 experiment_id = 3530875234215041
 
-# Alternative, you can use the mlflow APIs to create and set the experiment
+# For future reference, of course, you can use the mlflow APIs to create and set the experiment
 
 # experiment_name = "Orange Quality Prediction"
 # experiment_path = os.path.join(PROJECT_PATH, experiment_name)
@@ -269,19 +269,30 @@ with mlflow.start_run(run_name="random_forest_pipeline",
 
 def generate_shap_plot(model, data):
   import shap
-  
+  global image
   sample_data = data.sample(n=100)
   explainer = shap.TreeExplainer(model["classifier"])
   shap_values = explainer.shap_values(model["preprocessor"].transform(sample_data))
-
-  fig = plt.figure()
-  shap.dependence_plot(0, shap_values[0], model["preprocessor"].transform(sample_data), show=False)
+  
+  fig = plt.figure(1)
+  ax = plt.gca()
+  
+  shap.dependence_plot("rank(1)", shap_values[0],
+                       model["preprocessor"].transform(sample_data),
+                       ax=ax, show=False)
   plt.title(f"Acidity dependence plot")
   plt.ylabel(f"SHAP value for the Acidity")
-  return fig
+  image = fig
+  # Save figure
+  fig.savefig(f"/dbfs/tmp/{USERNAME}_shap_plot.png")
+
+  # Close plot
+  plt.close(fig)
+  return image
 
 # COMMAND ----------
 
+# DBTITLE 1,We now log our SHAP image as an artefact within this run
 # Enable automatic logging of input samples, metrics, parameters, and models
 import matplotlib.pyplot as plt
 
@@ -298,9 +309,8 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
                                         X_validation,
                                         y_validation,
                                         prefix="val_")
-    
     shap_fig = generate_shap_plot(rf_model, X_validation)
-    mlflow.log_figure(shap_fig, "acidity_shap.png")
+    mlflow.log_artifact(f"/dbfs/tmp/{USERNAME}_shap_plot.png")
 
 # COMMAND ----------
 

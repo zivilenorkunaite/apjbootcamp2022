@@ -12,7 +12,7 @@
 # MAGIC 
 # MAGIC 
 # MAGIC <div style="text-align:center">
-# MAGIC   <img src="files/ajmal_aziz/bootcamp_data/orange_classification.png" width="1000px">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/orange_classification.png" width="1000px">
 # MAGIC </div>
 
 # COMMAND ----------
@@ -67,7 +67,7 @@ display(collected_data)
 
 # COMMAND ----------
 
-# DBTITLE 1,Have a play around! 🥳
+# DBTITLE 1,Your turn: have a play around! 🥳
 display(collected_data)
 
 # COMMAND ----------
