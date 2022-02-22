@@ -12,7 +12,6 @@
 # MAGIC   val databaseName = (username_final+"_"+module_name).replaceAll("[^a-zA-Z0-9]", "_") + "_db"
 # MAGIC   spark.conf.set("com.databricks.training.spark.dbName", databaseName)
 # MAGIC   spark.conf.set("com.databricks.training.spark.userName", username_final)
-# MAGIC   databaseName
 # MAGIC }
 
 # COMMAND ----------
@@ -23,8 +22,6 @@ import os
 
 databaseName = spark.conf.get("com.databricks.training.spark.dbName")
 userName = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
-displayHTML("""Using the database <b style="color:green">{}</b>.""".format(databaseName))
-displayHTML("""User name is <b style="color:green">{}</b>.""".format(userName))
 
 # COMMAND ----------
 
@@ -42,6 +39,6 @@ PROJECT_PATH = '/'.join(NOTEBOOK_PATH.split('/')[:-1])
 
 # COMMAND ----------
 
-response = USERNAME + " " + NOTEBOOK_PATH + " " + PROJECT_PATH + " " + DATABASE_NAME
+# response = USERNAME + " " + NOTEBOOK_PATH + " " + PROJECT_PATH + " " + DATABASE_NAME
 
-dbutils.notebook.exit(response)
+# dbutils.notebook.exit(response)

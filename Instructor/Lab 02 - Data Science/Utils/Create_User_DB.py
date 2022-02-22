@@ -13,21 +13,20 @@
 # MAGIC   val databaseName = (username_final+"_"+module_name).replaceAll("[^a-zA-Z0-9]", "_") + "_db"
 # MAGIC   spark.conf.set("com.databricks.training.spark.dbName", databaseName)
 # MAGIC   spark.conf.set("com.databricks.training.spark.userName", username_final)
-# MAGIC   databaseName
 # MAGIC }
 
 # COMMAND ----------
 
 databaseName = spark.conf.get("com.databricks.training.spark.dbName")
 userName = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
-displayHTML("""User name is <b style="color:green">{}</b>.""".format(userName))
+# displayHTML("""User name is <b style="color:green">{}</b>.""".format(userName))
 
 # COMMAND ----------
 
 spark.sql("CREATE DATABASE IF NOT EXISTS {}".format(databaseName))
 spark.sql("USE {}".format(databaseName))
 
-displayHTML("""Using the database <b style="color:green">{}</b>.""".format(databaseName))
+# displayHTML("""Using the database <b style="color:green">{}</b>.""".format(databaseName))
 
 # COMMAND ----------
 

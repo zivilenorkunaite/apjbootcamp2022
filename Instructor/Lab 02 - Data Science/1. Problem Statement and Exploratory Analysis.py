@@ -39,23 +39,25 @@
 
 # COMMAND ----------
 
-# MAGIC %run "./Utils/Setup-Datasets"
+# DBTITLE 1,Bit of preamble before lift off! 🚀
+# MAGIC %run "./Utils/liftoff"
 
 # COMMAND ----------
 
-
+# DBTITLE 1,Let's peek inside the database we just created specific to your credentials
+spark.sql(f"use {DATABASE_NAME}")
+display(spark.sql(f"SHOW TABLES"))
 
 # COMMAND ----------
 
-# DBTITLE 1,Let's import the collected data from our Delta lake
-db_name = "anz_bootcamp3_ml_db"
-spark.sql(f"USE {db_name}")
-collected_data = spark.read.table("phytochemicals_quality")
+# DBTITLE 1,We now inspect the table of collected experiment data
+collected_data = spark.table('phytochemicals_quality')
+
 display(collected_data)
 
 # COMMAND ----------
 
-# DBTITLE 1,Let's use Databricks' built in data profiler to examine our dataset
+# DBTITLE 1,As a first step, use Databricks' built in data profiler to examine our dataset.
 display(collected_data)
 
 # COMMAND ----------
@@ -65,15 +67,12 @@ display(collected_data)
 
 # COMMAND ----------
 
+# DBTITLE 1,Have a play around! 🥳
 display(collected_data)
 
 # COMMAND ----------
 
-display(collected_data)
-
-# COMMAND ----------
-
-# DBTITLE 1,We can also use the plotly within our notebooks 
+# DBTITLE 1,More custom plotting - we can also use the plotly within our notebooks 
 import plotly.express as ps
 import plotly.express as px
 import plotly.io as pio
@@ -81,7 +80,7 @@ import plotly.io as pio
 # Plotting preferences
 pio.templates.default = "plotly_white"
 
-# We can easily convert our dataframe to pandas
+# Converting dataframe into pandas for plotly
 collected_data_pd = collected_data.toPandas()
 
 fig = px.scatter(collected_data_pd,
@@ -89,6 +88,7 @@ fig = px.scatter(collected_data_pd,
                  y="enzymes",
                  color="quality")
 
+# Customisations
 fig.update_layout(font_family="Arial",
                   title="Enzymes as a function of Vitaminc C",
                   yaxis_title="Enzymes",

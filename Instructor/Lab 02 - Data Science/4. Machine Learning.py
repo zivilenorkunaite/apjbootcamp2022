@@ -4,7 +4,7 @@
 # MAGIC # Let the Machines Learn! 
 # MAGIC 
 # MAGIC <div style="float:right">
-# MAGIC   <img src="files/ajmal_aziz/bootcamp_data/machine_learning_model.png" width="1000px">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/machine_learning_model.png" width="1000px">
 # MAGIC </div>
 # MAGIC 
 # MAGIC 
@@ -19,24 +19,18 @@
 
 # COMMAND ----------
 
-# MAGIC %run "../Lab 02 - Data Science/Utils/Fetch_User_Metadata"
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC ## Generating a training set from our Feature Store
+# MAGIC %run "./Utils/Fetch_User_Metadata"
 
 # COMMAND ----------
 
 # DBTITLE 1,Note: our original data set does not have our calculated features
-DATABASE_NAME = "anz_bootcamp3_ml_db"
 spark.sql(f"USE {DATABASE_NAME}")
-data = spark.table("experiment_results")
+data = spark.table("phytochemicals_quality")
 display(data)
 
 # COMMAND ----------
 
-# DBTITLE 1,First: split our data into training, validation (for tuning), and test (for reporting purposes only)
+# DBTITLE 1,First: split our raw data into training, validation (for tuning), and test (for reporting purposes only)
 from sklearn.model_selection import train_test_split
 
 train_portion = 0.7
@@ -51,12 +45,12 @@ assert round((train_df.shape[0] / (train_df.shape[0] + valid_df.shape[0] + test_
 
 # COMMAND ----------
 
-# DBTITLE 1,We need a FeatureLookup to pull features from our feature store
+# DBTITLE 1,We need a FeatureLookup to pull our custom features from our feature store
 from databricks.feature_store import FeatureLookup, FeatureStoreClient
 
 fs = FeatureStoreClient()
 
-feature_table = "feature_store_apjuice.oj_experiment"
+feature_table = f"{DATABASE_NAME}.features_oj_experiment"
 
 feature_lookup = FeatureLookup(
   table_name=feature_table,
@@ -70,7 +64,7 @@ feature_lookup = FeatureLookup(
 
 # COMMAND ----------
 
-# DBTITLE 1,We generate a training and testing data set using our feature lookups
+# DBTITLE 1,We generate a training and validation data set using our feature lookups
 training_set = fs.create_training_set(
   df=spark.createDataFrame(train_df),
   feature_lookups=[feature_lookup],
@@ -111,6 +105,7 @@ validation_data = validation_set.load_df().toPandas()
 
 # COMMAND ----------
 
+# DBTITLE 1,Tiny bit of cleanup before we define our pipeline 🧹 
 # Gather and exogenous and endogenous variables from training and validation
 X_training = training_data.drop(columns=['quality'], axis=1)
 y_training = (training_data['quality'] == "Good").astype(int)
@@ -158,7 +153,7 @@ preprocessor = ColumnTransformer(preprocessing_pipeline, remainder="passthrough"
 
 # COMMAND ----------
 
-# DBTITLE 1,Our pipeline needs to end in an estimator, we will use a random forrest
+# DBTITLE 1,Our pipeline needs to end in an estimator, we will use a random forrest at first
 from sklearn.ensemble import RandomForestClassifier
 
 rf_params = {
@@ -204,25 +199,47 @@ rf_model
 
 # COMMAND ----------
 
+# MAGIC %md-sandbox
+# MAGIC 
+# MAGIC ## Create an Experiment Manually 👩‍🔬
+# MAGIC 
+# MAGIC <div style="float:right">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/new_experiment.gif" width="800px">
+# MAGIC </div>
+# MAGIC 
+# MAGIC 
+# MAGIC We are now going to manually create an experiment using our UI. To do this, we will follow the following steps:
+# MAGIC 
+# MAGIC 0. Ensure that you are in the Machine Learning persona by checking the LHS pane and ensuring it says **Machine Learning**.
+# MAGIC - Click on the ```Experiments``` button.
+# MAGIC - Click the "Create an AutoML Experiment" arrow dropdown
+# MAGIC - Press on **Create Blank Experiment**
+# MAGIC - Put the experiment name as: "**first_name last_name Orange Quality Prediction**", so e.g. "Ajmal Aziz Orange Quality Prediction"
+
+# COMMAND ----------
+
 # DBTITLE 1,We create a blank experiment to log our runs to
-import mlflow
+experiment_id = 3530875234214952
 
-experiment_name = "Orange Quality Prediction"
-experiment_path = os.path.join(PROJECT_PATH, experiment_name)
-experiment_id = mlflow.create_experiment(experiment_path)
+# Alternative, you can use the mlflow APIs to create and set the experiment
 
-mlflow.set_experiment(experiment_path)
-displayHTML(f"<h4>Make sure you can see your experiment on <a href='#mlflow/experiments/{experiment_id}'>#mlflow/experiments/{experiment_id}</a></h4>")
+# experiment_name = "Orange Quality Prediction"
+# experiment_path = os.path.join(PROJECT_PATH, experiment_name)
+# experiment_id = mlflow.create_experiment(experiment_path)
+
+# mlflow.set_experiment(experiment_path)
 
 # COMMAND ----------
 
 # DBTITLE 1,We use mlflow's sklearn flavour to log and evaluate our model as an experiment run
+import mlflow
 import pandas as pd
 
 # Enable automatic logging of input samples, metrics, parameters, and models
 mlflow.sklearn.autolog(log_input_examples=True, silent=True)
 
-with mlflow.start_run(run_name="random_forest_pipeline", experiment_id=experiment_id) as mlflow_run:
+with mlflow.start_run(run_name="random_forest_pipeline",
+                      experiment_id=experiment_id) as mlflow_run:
     # Fit our estimator
     rf_model.fit(X_training, y_training)
     
@@ -238,20 +255,31 @@ with mlflow.start_run(run_name="random_forest_pipeline", experiment_id=experimen
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Logging Artefacts in Runs (Partial Dependence Plot)
-# MAGIC We have flexibility over the artefacts we want to log. Let's log a simple PDP for the citric acid feature.
+# MAGIC %md-sandbox
+# MAGIC ## Logging other artefacts in runs
+# MAGIC We have flexibility over the artefacts we want to log. By logging artefacts with runs we have examine the quality of fit to better determine if we have overfit or if we need to retrain, etc. These artefacts also help with reproducibility.
+# MAGIC 
+# MAGIC As an example, let's log the partial dependence plot from SHAP with a single model run.
 
 # COMMAND ----------
 
-pd_explainer = partial_dependence.PartialDependenceExplainer(estimator=rf_model)
-pd_explainer.fit(X_training, feature_name='citric_acid')
-pd_explainer.plot()
-plt.show()
+def generate_shap_plot(model, data):
+  import shap
+  
+  sample_data = data.sample(n=100)
+  explainer = shap.TreeExplainer(model["classifier"])
+  shap_values = explainer.shap_values(model["preprocessor"].transform(sample_data))
+
+  fig = plt.figure()
+  shap.dependence_plot(0, shap_values[0], model["preprocessor"].transform(sample_data), show=False)
+  plt.title(f"Acidity dependence plot")
+  plt.ylabel(f"SHAP value for the Acidity")
+  return fig
 
 # COMMAND ----------
 
 # Enable automatic logging of input samples, metrics, parameters, and models
+import matplotlib.pyplot as plt
 
 with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
     # Fit our estimator
@@ -267,7 +295,8 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
                                         y_validation,
                                         prefix="val_")
     
-    train_sample = X_training.sample(n=min(100, len(X_training.index)))
+    shap_fig = generate_shap_plot(rf_model, X_validation)
+    mlflow.log_figure(shap_fig, "acidity_shap.png")
 
 # COMMAND ----------
 

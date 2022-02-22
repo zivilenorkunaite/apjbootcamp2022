@@ -11,8 +11,8 @@
 
 # COMMAND ----------
 
-# DBTITLE 1,Preamble - we fetch your notebook data 
-# MAGIC %run "../Lab 02 - Data Science/Utils/Fetch_User_Metadata"
+# DBTITLE 1,Grabbing your user credentials 👩‍💻
+# MAGIC %run "./Utils/Fetch_User_Metadata"
 
 # COMMAND ----------
 
@@ -27,11 +27,6 @@
 # COMMAND ----------
 
 experiment_id = 1390462475120108
-
-experiment_name = 
-experiment_path = os.path.join(project_path, experiment_name)
-
-mlflow.set_experiment(experiment_id)
 
 # COMMAND ----------
 
@@ -56,16 +51,17 @@ pprint(best_run)
 
 # COMMAND ----------
 
-
-
-# COMMAND ----------
-
 # DBTITLE 1,Let's perform local inference on the model
+model_uri = ''
 
 
 # COMMAND ----------
 
 # DBTITLE 1,We can register the model as a pandas UDF for distributed inference
+
+
+# COMMAND ----------
+
 
 
 # COMMAND ----------

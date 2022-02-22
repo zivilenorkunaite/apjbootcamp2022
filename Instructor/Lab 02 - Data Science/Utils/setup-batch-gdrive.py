@@ -13,7 +13,6 @@ db_name = spark.conf.get("com.databricks.training.spark.dbName")
 username = spark.conf.get("com.databricks.training.spark.userName").replace('.', '_')
 #username = dbutils.widgets.get("user_name")
 base_table_path = f"dbfs:/FileStore/{username}/bootcamp_data/"
-#local_data_path = f"{username}_bootcamp_data/"
 local_data_path = f"/dbfs/FileStore/{username}/bootcamp_data/"
 
 # Construct the unique database name
@@ -25,7 +24,6 @@ print(f"DBFS Path is: {base_table_path}")
 
 #Local Data path is
 print(f"Local Data Path is: {local_data_path}")
-
 
 # COMMAND ----------
 
@@ -54,9 +52,6 @@ process = subprocess.Popen(['rm', '-f', '-r', local_data_path],
 stdout, stderr = process.communicate()
 
 stdout.decode('utf-8'), stderr.decode('utf-8')
-
-
-
 
 # COMMAND ----------
 
@@ -132,57 +127,4 @@ def download_file_from_google_drive(id, destination):
 
 # COMMAND ----------
 
-# ### Historical Sensor data
 
-# local_file_his = local_data_path + "phytochemicals_quality.csv"
-
-
-# download_file_from_google_drive("", local_file_his)
-
-
-# #dbutils.fs.cp(f"file:/databricks/driver/{local_file_his}", f"{base_table_path}historical_sensor_data.csv")
-
-# COMMAND ----------
-
-### Backfill Sensor data
-
-local_file_bf = local_data_path + "orange_qualities.parquet"
-
-download_file_from_google_drive("1boLrpoOwS1OtO_ynaellTNThzY2BuDtn", local_file_bf)
-
-#dbutils.fs.cp(f"file:/databricks/driver/{local_file_bf}", f"{base_table_path}backfill_sensor_data_final.csv")
-
-# COMMAND ----------
-
-dataPath1 = f"{base_table_path}/orange_qualities.parquet"
-
-df1 = spark.read\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("inferSchema", "true")\
-  .parquet(dataPath1)
-
-display(df1)
-
-# COMMAND ----------
-
-df1.createOrReplaceTempView("orange_qualities_vw")
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC DROP TABLE IF EXISTS phytochemicals_quality;
-# MAGIC 
-# MAGIC CREATE TABLE phytochemicals_quality 
-# MAGIC USING DELTA
-# MAGIC AS (
-# MAGIC   SELECT * FROM orange_qualities_vw
-# MAGIC )
-
-# COMMAND ----------
-
-# Return to the caller, passing the variables needed for file paths and database
-
-response = local_data_path + " " + base_table_path + " " + database_name
-
-dbutils.notebook.exit(response)
