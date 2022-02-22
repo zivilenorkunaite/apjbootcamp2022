@@ -219,7 +219,7 @@ rf_model
 # COMMAND ----------
 
 # DBTITLE 1,We create a blank experiment to log our runs to
-experiment_id = 3530875234214952
+experiment_id = 3530875234215041
 
 # Alternative, you can use the mlflow APIs to create and set the experiment
 
@@ -311,16 +311,6 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
 # MAGIC GridSearch could be a good way to do it, but not very efficient when the parameter dimension increase and the model is getting slow to train due to a massive amount of data.
 # MAGIC 
 # MAGIC HyperOpt search accross your parameter space for the minimum loss of your model, using Baysian optimization instead of a random walk
-# MAGIC <!-- do not remove -->
-# MAGIC <img width="1px" src="https://www.google-analytics.com/collect?v=1&gtm=GTM-NKQ8TT7&tid=UA-163989034-1&cid=555&aip=1&t=event&ec=field_demos&ea=display&dp=%2F42_field_demos%2Fretail%2Fml%2Fdemand_forecast%2Fml_demand_forecast_02&dt=ML">
-# MAGIC <!-- [metadata={"description":"Scale Demand forecast analysys with hyperopt.<br/><i>Usage: demo model training scalability within Udf.</i>",
-# MAGIC  "authors":["quentin.ambard@databricks.com"],
-# MAGIC  "db_resources":{},
-# MAGIC   "search_tags":{"vertical": "retail", "step": "Data Science", "components": ["mlflow", "hyperopt", "prophet"]},
-# MAGIC                  "canonicalUrl": {"AWS": "", "Azure": "", "GCP": ""}}] -->
-# MAGIC 
-# MAGIC <!-- ![grid_search](https://www.jeremyjordan.me/content/images/2017/11/grid_search.gif)
-# MAGIC ![bayes_opt](https://www.jeremyjordan.me/content/images/2017/11/Bayesian_optimization.gif) -->
 
 # COMMAND ----------
 

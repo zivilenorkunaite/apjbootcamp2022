@@ -26,7 +26,14 @@
 
 # COMMAND ----------
 
-experiment_id = 1390462475120108
+experiment_id = 3530875234215041
+
+# Alternatively, 
+# import mlflow
+
+# experiment_name = 'Ajmal Aziz Orange Quality Prediction'
+# experiment_path = os.path.join(PROJECT_PATH, experiment_name)
+# experiment_id = mlflow.tracking.MlflowClient().get_experiment_by_name(experiment_path).experiment_id
 
 # COMMAND ----------
 
@@ -34,7 +41,7 @@ experiment_id = 1390462475120108
 import mlflow 
 
 all_runs = mlflow.search_runs(experiment_ids=[experiment_id])
-display(all_runs)
+all_runs
 
 # COMMAND ----------
 
@@ -51,14 +58,22 @@ pprint(best_run)
 
 # COMMAND ----------
 
-# DBTITLE 1,Let's perform local inference on the model
-model_uri = ''
+# DBTITLE 1,Let's start by registering our model
+from mlflow.tracking import MlflowClient
 
+client = MlflowClient()
+
+model_name = f'orange_experiment_{USERNAME}'
+print(f'Will be using model name: "{model_name}"')
+
+client.create_registered_model(model_name)
+
+displayHTML(f"<h2>Check the model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h2>")
 
 # COMMAND ----------
 
-# DBTITLE 1,We can register the model as a pandas UDF for distributed inference
-
+# DBTITLE 1,We can register the best model in our model registry for the rest of the team to see
+mlflow.register_model(f'runs:/{best_run["run_id"]}/model', model_name)
 
 # COMMAND ----------
 
