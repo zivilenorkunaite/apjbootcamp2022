@@ -102,6 +102,10 @@ def download_datasets(datasets_data_path, full_refresh=False):
 
 # COMMAND ----------
 
+response = session.get(URL, params = {'id': id, 'confirm': 't'}, stream=True)
+
+# COMMAND ----------
+
 # create path if it does not exist
 dbutils.fs.mkdirs(base_table_path)
 

@@ -131,7 +131,6 @@ def save_to_db(df, name):
 
 save_to_db(X_validation, "X_validation")
 save_to_db(X_training, "X_training")
-training_set.load_df().write.mode("overwrite").format("delta").saveAsTable(f"{DATABASE_NAME}.training_set")
 
 # COMMAND ----------
 
@@ -220,7 +219,7 @@ rf_model
 # MAGIC ## Create an Experiment Manually 👩‍🔬
 # MAGIC 
 # MAGIC <div style="float:right">
-# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/new_experiment.gif" width="800px">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/create_experiment.gif" width="800px">
 # MAGIC </div>
 # MAGIC 
 # MAGIC 
@@ -235,7 +234,7 @@ rf_model
 # COMMAND ----------
 
 # DBTITLE 1,We create a blank experiment to log our runs to
-experiment_id = 3530875234215041
+experiment_id = 1651724910858021
 
 # For future reference, of course, you can use the mlflow APIs to create and set the experiment
 
@@ -272,10 +271,17 @@ with mlflow.start_run(run_name="random_forest_pipeline",
 # COMMAND ----------
 
 # MAGIC %md-sandbox
+# MAGIC 
+# MAGIC <div style="float:right">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/shap_logged.gif" width="600px">
+# MAGIC </div>
+# MAGIC 
+# MAGIC 
 # MAGIC ## Logging other artefacts in runs
+# MAGIC 
 # MAGIC We have flexibility over the artefacts we want to log. By logging artefacts with runs we have examine the quality of fit to better determine if we have overfit or if we need to retrain, etc. These artefacts also help with reproducibility.
 # MAGIC 
-# MAGIC As an example, let's log the partial dependence plot from SHAP with a single model run.
+# MAGIC As an example, let's log the partial dependence plot from SHAP with a single model run. 👇
 
 # COMMAND ----------
 
@@ -337,6 +343,12 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
 # MAGIC GridSearch could be a good way to do it, but not very efficient when the parameter dimension increase and the model is getting slow to train due to a massive amount of data.
 # MAGIC 
 # MAGIC HyperOpt search accross your parameter space for the minimum loss of your model, using Baysian optimization instead of a random walk
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ![my_test_image](https://www.jeremyjordan.me/content/images/2017/11/grid_search.gif)
+# MAGIC ![my_test_image](https://www.jeremyjordan.me/content/images/2017/11/Bayesian_optimization.gif)
 
 # COMMAND ----------
 

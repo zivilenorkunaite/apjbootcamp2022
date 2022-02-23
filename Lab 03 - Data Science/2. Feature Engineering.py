@@ -107,7 +107,7 @@ fs.create_table(
 )
 
 displayHTML("""
-  <h3>Check out the <a href="/#feature-store/{}.features_oj_experiment">feature store</a> to see where our features are stored.</h3>
+  <h3>Check out the <a href="/#feature-store/{}.features_oj_prediction_experiment">feature store</a> to see where our features are stored.</h3>
 """.format(DATABASE_NAME))
 
 # COMMAND ----------

@@ -34,7 +34,7 @@
 
 # COMMAND ----------
 
-experiment_id = 3530875234215041
+experiment_id = 1651724910858021
 
 # COMMAND ----------
 
@@ -42,12 +42,17 @@ experiment_id = 3530875234215041
 import mlflow 
 
 all_runs = mlflow.search_runs(experiment_ids=[experiment_id])
-all_runs
+all_runs.head()
 
 # COMMAND ----------
 
-# MAGIC %md
+# MAGIC %md-sandbox
 # MAGIC ### How to Use the Model Registry
+# MAGIC 
+# MAGIC <div style="float:right">
+# MAGIC   <img src="https://ajmal-field-demo.s3.ap-southeast-2.amazonaws.com/apj-sa-bootcamp/model_registry.png" width="1000px">
+# MAGIC </div>
+# MAGIC 
 # MAGIC Typically, data scientists who use MLflow will conduct many experiments, each with a number of runs that track and log metrics and parameters. During the course of this development cycle, they will select the best run within an experiment and register its model with the registry.  Think of this as **committing** the model to the registry, much as you would commit code to a version control system.  
 # MAGIC 
 # MAGIC The registry defines several model stages: `None`, `Staging`, `Production`, and `Archived`. Each stage has a unique meaning. For example, `Staging` is meant for model testing, while `Production` is for models that have completed the testing or review processes and have been deployed to applications. 
@@ -132,8 +137,8 @@ client.transition_model_version_stage(model_name, model_registered.version, stag
 
 # COMMAND ----------
 
-client.transition_model_version_stage(name=model_name, version=2, stage='Production')
-client.transition_model_version_stage(name=model_name, version=1, stage='Archived')
+# client.transition_model_version_stage(name=model_name, version=2, stage='Production')
+# client.transition_model_version_stage(name=model_name, version=1, stage='Archived')
 
 # COMMAND ----------
 

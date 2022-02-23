@@ -62,7 +62,7 @@ display(collected_data)
 
 # COMMAND ----------
 
-# DBTITLE 1,Looks like we have a slightly positive relationship between vitamin C and oranges
+# DBTITLE 1,Looks like we have a slightly positive relationship between vitamin C and orange quality
 display(collected_data)
 
 # COMMAND ----------

@@ -53,6 +53,10 @@ model_features = loaded_model.metadata.get_input_schema().input_names()
 
 # COMMAND ----------
 
+
+
+# COMMAND ----------
+
 @dlt.create_table(
   comment="We extract the training data set from our database",  
   table_properties={
