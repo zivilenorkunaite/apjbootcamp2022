@@ -302,7 +302,7 @@ def generate_shap_plot(model, data):
   plt.ylabel(f"SHAP value for the Acidity")
   image = fig
   # Save figure
-  fig.savefig(f"/dbfs/tmp/{USERNAME}_shap_plot.png")
+  fig.savefig(f"/dbfs/FileStore/{USERNAME}_shap_plot.png")
 
   # Close plot
   plt.close(fig)
@@ -328,7 +328,7 @@ with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
                                         y_validation,
                                         prefix="val_")
     shap_fig = generate_shap_plot(rf_model, X_validation)
-    mlflow.log_artifact(f"/dbfs/tmp/{USERNAME}_shap_plot.png")
+    mlflow.log_artifact(f"/dbfs/FileStore/{USERNAME}_shap_plot.png")
 
 # COMMAND ----------
 
