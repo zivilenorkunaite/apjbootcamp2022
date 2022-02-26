@@ -60,7 +60,7 @@ def download_file_from_google_drive(id, destination):
     # init a HTTP session
     session = requests.Session()
     # make a request
-    response = session.get(URL, params = {'id': id}, stream=True)
+    response = session.get(URL, params = {'id': id, 'confirm': 't'}, stream=True)
     print("[+] Downloading", response.url)
     # get confirmation token
     token = get_confirm_token(response)
@@ -99,10 +99,6 @@ def download_datasets(datasets_data_path, full_refresh=False):
     if not (dataset_name in existing_datasets):
       download_file_from_google_drive(all_datasets_with_file_id[dataset_name], f"{datasets_data_path}{dataset_name}")
   
-
-# COMMAND ----------
-
-response = session.get(URL, params = {'id': id, 'confirm': 't'}, stream=True)
 
 # COMMAND ----------
 
