@@ -258,86 +258,6 @@ dbutils.fs.head(first_log_file_location)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC 
-# MAGIC ### MANAGED Tables
-# MAGIC 
-# MAGIC This is a MANAGED table - we can see it in DESCRIBE EXTENDED results as well as in the log file. A _managed table_ is a Spark SQL table for which Spark manages both the data and the metadata. In the case of managed table, Databricks stores the metadata and data in DBFS in your account. Since Spark SQL manages the tables, running a DROP TABLE command deletes **both** the metadata and data.
-# MAGIC 
-# MAGIC Let's try it using a different way to run SQL statements - by using spark.sql() command in a python cell
-
-# COMMAND ----------
-
-spark.sql("DROP TABLE stores");
-
-try:
-  dbutils.fs.ls(table_location)
-except Exception as e:
-  print(e)
-  
-
-# COMMAND ----------
-
-# MAGIC 
-# MAGIC %md
-# MAGIC 
-# MAGIC As expected, cell above logs an error. That is because running `DROP TABLE stores` has also deleted all data files.
-# MAGIC 
-# MAGIC There is an option to let Spark SQL manage the metadata, while you control the data location. We refer to this as an unmanaged or **external table**. Spark SQL manages the relevant metadata, so when you perform `DROP TABLE`, Spark removes only the metadata and not the data itself. The data is still present in the path you provided when creating that table (e.g. on your S3 bucket or Azure Storage account).
-# MAGIC 
-# MAGIC Re-create our `stores` table, this time as an external table. `df` still has our initial DataFrame so it can be used to save data into table
-
-# COMMAND ----------
-
-stores_data_path = f"{local_data_path}tables/stores/"
-dbutils.fs.rm(stores_data_path, recurse=True)
-
-df.write \
-  .mode("overwrite") \
-  .option("path", stores_data_path) \
-  .saveAsTable("stores")
-
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC Check that Location value is different - data files have been stored in the `stores_data_path` location we provided above.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DESCRIBE TABLE EXTENDED stores;
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC If we drop table now - the data remains on our storage location.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DROP TABLE IF EXISTS stores
-
-# COMMAND ----------
-
-dbutils.fs.ls(stores_data_path)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC We will need this table however so let's create a Delta Table pointing to the same `stores_data_path` location
-
-# COMMAND ----------
-
-spark.sql(f"CREATE TABLE stores LOCATION '{stores_data_path}'")
-
-# COMMAND ----------
-
 # MAGIC %md 
 # MAGIC 
 # MAGIC ### Update Delta Table
@@ -380,12 +300,6 @@ spark.sql(f"CREATE TABLE stores LOCATION '{stores_data_path}'")
 
 # MAGIC %md
 # MAGIC 
-# MAGIC See how you can plot this data in a cell above - create a map colored by number of stores in each country
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
 # MAGIC ### Track Data History
 # MAGIC 
 # MAGIC 
@@ -405,11 +319,11 @@ spark.sql(f"CREATE TABLE stores LOCATION '{stores_data_path}'")
 
 # COMMAND ----------
 
-show_files_as_dataframe(stores_data_path + "/_delta_log/").display();
+show_files_as_dataframe(table_location + "/_delta_log/").display();
 
 # COMMAND ----------
 
-show_files_as_dataframe(stores_data_path).display();
+show_files_as_dataframe(table_location).display();
 
 # COMMAND ----------
 
@@ -545,6 +459,8 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC drop table if exists stores_clone;
+# MAGIC 
 # MAGIC create table stores_clone DEEP CLONE stores VERSION AS OF 3 -- you can specify timestamp here instead of a version
 
 # COMMAND ----------
@@ -556,6 +472,8 @@ show_files_as_dataframe(stores_data_path).display();
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC 
+# MAGIC drop table if exists stores_clone_shallow;
 # MAGIC 
 # MAGIC -- Note that no files are copied
 # MAGIC 
@@ -580,12 +498,14 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC DROP VIEW IF EXISTS v_stores_email_redacted;
+# MAGIC 
 # MAGIC CREATE VIEW v_stores_email_redacted AS
 # MAGIC SELECT
 # MAGIC   id,
 # MAGIC   name,
 # MAGIC   CASE WHEN
-# MAGIC     is_member('finance_department') THEN email
+# MAGIC     is_member('admin') THEN email
 # MAGIC     ELSE 'REDACTED'
 # MAGIC   END AS email,
 # MAGIC   city,
@@ -604,14 +524,12 @@ show_files_as_dataframe(stores_data_path).display();
 
 # MAGIC %sql
 # MAGIC 
+# MAGIC DROP VIEW IF EXISTS v_stores_country_limited;
+# MAGIC 
 # MAGIC CREATE VIEW v_stores_country_limited AS
 # MAGIC SELECT *
 # MAGIC FROM stores
 # MAGIC WHERE 
-# MAGIC   (is_member('NZ_team') and store_country = 'NZL')
-# MAGIC OR
-# MAGIC   (is_member('AU_team') and store_country = 'AUS')
-# MAGIC OR 
 # MAGIC   (is_member('admin') and id = 'SYD01');
 
 # COMMAND ----------
@@ -619,3 +537,7 @@ show_files_as_dataframe(stores_data_path).display();
 # MAGIC %sql
 # MAGIC 
 # MAGIC select * from v_stores_country_limited;
+
+# COMMAND ----------
+
+
