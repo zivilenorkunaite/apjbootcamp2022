@@ -34,7 +34,7 @@
 
 # COMMAND ----------
 
-experiment_id = 1651724910858021
+experiment_id = <>
 
 # COMMAND ----------
 
@@ -106,13 +106,6 @@ displayHTML(f"<h4>This model will by default be in the version None stage. Check
 
 # COMMAND ----------
 
-# DBTITLE 1,We can register the best model in our model registry for the rest of the team to see
-model_registered = mlflow.register_model(f'runs:/{best_run.iloc[0]["run_id"]}/model', model_name)
-
-displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
-
-# COMMAND ----------
-
 # MAGIC %md-sandbox
 # MAGIC ## Let's now promote our model to production
 # MAGIC 
@@ -126,6 +119,13 @@ displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{
 # MAGIC - Find your Model (if your username is **```"yan_moiseev"```**, you should see it as **````orange_experiment_yan_moiseev````**)
 # MAGIC - Click on "Version 2"
 # MAGIC - Click on "Stage", transition it to "Production"
+
+# COMMAND ----------
+
+# DBTITLE 1,We can register the best model in our model registry for the rest of the team to see
+model_registered = mlflow.register_model(f'runs:/{best_run.iloc[0]["run_id"]}/model', model_name)
+
+displayHTML(f"<h4>Check out version 2 of this model at <a href='#mlflow/models/{model_name}'>#mlflow/models/{model_name}</a></h4>")
 
 # COMMAND ----------
 
