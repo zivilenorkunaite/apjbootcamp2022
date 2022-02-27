@@ -234,7 +234,7 @@ rf_model
 # COMMAND ----------
 
 # DBTITLE 1,We create a blank experiment to log our runs to
-experiment_id = 1651724910858021
+experiment_id = <>
 
 # For future reference, of course, you can use the mlflow APIs to create and set the experiment
 
@@ -314,7 +314,7 @@ def generate_shap_plot(model, data):
 # Enable automatic logging of input samples, metrics, parameters, and models
 import matplotlib.pyplot as plt
 
-with mlflow.start_run(run_name="random_forest_pipeline") as mlflow_run:
+with mlflow.start_run(run_name="random_forest_pipeline", experiment_id=experiment_id) as mlflow_run:
     # Fit our estimator
     rf_model.fit(X_training, y_training)
     
