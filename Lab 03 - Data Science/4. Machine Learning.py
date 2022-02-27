@@ -314,7 +314,7 @@ def generate_shap_plot(model, data):
 # Enable automatic logging of input samples, metrics, parameters, and models
 import matplotlib.pyplot as plt
 
-with mlflow.start_run(run_name="random_forest_pipeline", experiment_id=experiment_id) as mlflow_run:
+with mlflow.start_run(run_name="random_forest_pipeline_2", experiment_id=experiment_id) as mlflow_run:
     # Fit our estimator
     rf_model.fit(X_training, y_training)
     
@@ -410,7 +410,7 @@ def f_train(trial_params):
 spark_trials = SparkTrials(parallelism=10)
 
 # Run fmin within an MLflow run context so that each hyperparameter configuration is logged as a child run of a parent
-with mlflow.start_run(run_name='xgboost_models'):
+with mlflow.start_run(run_name='xgboost_models', experiment_id=experiment_id) as mlflow_run:
   best_params = fmin(
     fn=f_train, 
     space=search_space, 
@@ -418,10 +418,6 @@ with mlflow.start_run(run_name='xgboost_models'):
     max_evals=96,
     trials=spark_trials, 
   )
-
-# COMMAND ----------
-
-
 
 # COMMAND ----------
 
@@ -433,7 +429,7 @@ with mlflow.start_run(run_name='xgboost_models'):
 # MAGIC 
 # MAGIC ```mlflow``` is also able to handle abitrary machine learning models using mlflow's ```pyfunc``` model flavour.
 # MAGIC 
-# MAGIC Let's create a simple neural network model for our wine quality prediction and see how mlflow handles it.
+# MAGIC Let's create a simple neural network model for our orange quality prediction and see how mlflow handles it.
 
 # COMMAND ----------
 
@@ -567,7 +563,7 @@ def evaluate_model(model, valid_loader):
 # DBTITLE 1,Finally, we can run within a run context to store, log, and track model training and validation
 from mlflow.models import infer_signature
 
-with mlflow.start_run(run_name="Pytorch Model") as run:
+with mlflow.start_run(run_name="Pytorch Model", experiment_id=experiment_id) as run:
   # Log the parameters of the model run
   mlflow.log_params(nn_params)
   run_id = run.info.run_id
@@ -584,7 +580,3 @@ with mlflow.start_run(run_name="Pytorch Model") as run:
   X_batch, _ = next(iter(valid_loader))
   #   signature = infer_signature(X_batch, model_pyfunc.predict(None, X_batch))
   mlflow.pyfunc.log_model("pytorch_model", python_model=model_pyfunc)
-
-# COMMAND ----------
-
-
