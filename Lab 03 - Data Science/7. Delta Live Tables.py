@@ -23,7 +23,7 @@
 # COMMAND ----------
 
 # Your database name is your <first-name>_<last-name>_ap_juice_db
-USERNAME = "ajmal_aziz"
+USERNAME = ""
 DATABASE_NAME = f"{USERNAME}_ap_juice_db"
 
 # COMMAND ----------
