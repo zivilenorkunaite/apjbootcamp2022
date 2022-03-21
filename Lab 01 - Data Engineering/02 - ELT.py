@@ -88,7 +88,7 @@ spark.sql(f"USE {database_name};")
 # MAGIC %md
 # MAGIC ## ![ ](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png) Delta Architecture
 # MAGIC 
-# MAGIC <img src="https://delta.io/wp-content/uploads/2019/04/Delta-Lake-marketecture-0423c.png" width=1012/>
+# MAGIC <img src="https://delta.io/static/delta-hp-hero-wide-74fd699d8e96c4b511bd13c60d8ab348.png" width=1012/>
 
 # COMMAND ----------
 
@@ -426,7 +426,6 @@ select * from v_silver_sales;
 # MAGIC %sql 
 # MAGIC create or replace view v_silver_sale_items 
 # MAGIC as 
-# MAGIC 
 # MAGIC with itemised_records as (
 # MAGIC   select
 # MAGIC     *,
@@ -528,12 +527,6 @@ dbutils.fs.ls(f"{silver_table_path}/silver_sale_items/_delta_log/")
 
 # COMMAND ----------
 
-# Explore the latest log file for our table
-
-spark.sql(f"select add.path as filename, add.stats:minValues, add.stats:maxValues from json.`{silver_table_path}/silver_sale_items/_delta_log/00000000000000000001.json` where add is not null").display()
-
-# COMMAND ----------
-
 # MAGIC %md
 # MAGIC 
 # MAGIC ### MERGE
@@ -563,7 +556,7 @@ get_fixed_records_data(autoloader_ingest_path, 'SYD01','2022-01-01')
 
 # MAGIC %md
 # MAGIC 
-# MAGIC `_resqued_data` column contains any parsing errors. There should be none if everything remains as an autoloader default string, but we have provided SchemaHints value before.
+# MAGIC `_rescued_data` column contains any parsing errors. There should be none if everything remains as an autoloader default string, but we have provided SchemaHints value before.
 
 # COMMAND ----------
 
