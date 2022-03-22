@@ -415,7 +415,7 @@ with mlflow.start_run(run_name='xgboost_models', experiment_id=experiment_id) as
     fn=f_train, 
     space=search_space, 
     algo=tpe.suggest, 
-    max_evals=96,
+    max_evals=5,
     trials=spark_trials, 
   )
 
@@ -519,7 +519,7 @@ def train_model(model, train_loader, nn_params, optimiser):
   model.train()
   for step in range(nn_params['num_epochs']):
     for X_batch, y_batch in train_loader:
-      optimizer.zero_grad()
+      optimiser.zero_grad()
       y_pred = model(X_batch)
 
       loss = criterion(y_pred, y_batch.unsqueeze(1))
@@ -528,7 +528,7 @@ def train_model(model, train_loader, nn_params, optimiser):
 
       # 🔙 Backprop :) 
       loss.backward()
-      optimizer.step()
+      optimiser.step()
 
       mlflow.log_metric("Epoch Loss", float(loss.item()), step=step)
       mlflow.log_metric("Model Training AUC", acc, step=step)
@@ -580,3 +580,7 @@ with mlflow.start_run(run_name="Pytorch Model", experiment_id=experiment_id) as 
   X_batch, _ = next(iter(valid_loader))
   #   signature = infer_signature(X_batch, model_pyfunc.predict(None, X_batch))
   mlflow.pyfunc.log_model("pytorch_model", python_model=model_pyfunc)
+
+# COMMAND ----------
+
+

@@ -132,25 +132,19 @@ def download_file_from_google_drive(id, destination):
 
 # COMMAND ----------
 
-# ### Historical Sensor data
-
-# local_file_his = local_data_path + "phytochemicals_quality.csv"
-
-
-# download_file_from_google_drive("", local_file_his)
-
-
-# #dbutils.fs.cp(f"file:/databricks/driver/{local_file_his}", f"{base_table_path}historical_sensor_data.csv")
-
-# COMMAND ----------
-
 ### Backfill Sensor data
+import zipfile
 
 local_file_bf = local_data_path + "orange_qualities.parquet"
 
-download_file_from_google_drive("1boLrpoOwS1OtO_ynaellTNThzY2BuDtn", local_file_bf)
+try:
+  working_dir = os.path.split(os.path.split(os.getcwd())[0])[0]
+  with zipfile.ZipFile(f"{working_dir}/Datasets/dimensions.zip","r") as zip_ref:
+    zip_ref.extractall(local_data_path)
+except Exception as e:
+  print(e)
+  download_file_from_google_drive("1boLrpoOwS1OtO_ynaellTNThzY2BuDtn", local_file_bf)
 
-#dbutils.fs.cp(f"file:/databricks/driver/{local_file_bf}", f"{base_table_path}backfill_sensor_data_final.csv")
 
 # COMMAND ----------
 

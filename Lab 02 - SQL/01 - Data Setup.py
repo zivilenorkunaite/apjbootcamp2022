@@ -72,7 +72,7 @@ spark.sql(f"USE {database_name};")
 # MAGIC %md
 # MAGIC ## ![ ](https://pages.databricks.com/rs/094-YMS-629/images/delta-lake-tiny-logo.png) Delta Architecture
 # MAGIC 
-# MAGIC <img src="https://delta.io/wp-content/uploads/2019/04/Delta-Lake-marketecture-0423c.png" width=1012/>
+# MAGIC <img src="https://delta.io/static/delta-hp-hero-wide-74fd699d8e96c4b511bd13c60d8ab348.png" width=1012/>
 
 # COMMAND ----------
 

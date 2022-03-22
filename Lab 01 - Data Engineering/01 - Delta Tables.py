@@ -16,7 +16,6 @@
 # MAGIC Some of the things we will look at are:
 # MAGIC * Creating a new Delta Table
 # MAGIC * Using Delta Log and Time Traveling 
-# MAGIC * Difference between Managed and External Tables
 # MAGIC * Tracking data changes using Change Data Feed
 # MAGIC * Cloning tables
 # MAGIC * Masking data by using Dynamic Views
@@ -505,7 +504,7 @@ show_files_as_dataframe(table_location).display();
 # MAGIC   id,
 # MAGIC   name,
 # MAGIC   CASE WHEN
-# MAGIC     is_member('admin') THEN email
+# MAGIC     is_member('admins') THEN email
 # MAGIC     ELSE 'REDACTED'
 # MAGIC   END AS email,
 # MAGIC   city,
@@ -530,14 +529,10 @@ show_files_as_dataframe(table_location).display();
 # MAGIC SELECT *
 # MAGIC FROM stores
 # MAGIC WHERE 
-# MAGIC   (is_member('admin') and id = 'SYD01');
+# MAGIC   (is_member('admins') OR id = 'SYD01');
 
 # COMMAND ----------
 
 # MAGIC %sql
 # MAGIC 
 # MAGIC select * from v_stores_country_limited;
-
-# COMMAND ----------
-
-
