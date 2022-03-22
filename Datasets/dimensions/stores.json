@@ -1,0 +1,9 @@
+{ "id": "BNE02", "name": "Brisbane Airport", "email": "castillojoseph@example.net", "city": "Brisbane", "hq_address": "6 Ware Copse Doughertystad, NSW, 2687", "phone_number": "0425.061.371" }
+{ "id": "PER01", "name": "Perth CBD", "email": "yhernandez@example.com", "city": "Perth", "hq_address": "Level 2 95 Jorge Vale St. Gary, NT, 2705", "phone_number": "08-9854-6006" }
+{ "id": "CBR01", "name": "Canberra Airport", "email": "feliciasalas@example.com", "city": "Canberra", "hq_address": "5 Julie Reach Lake Aaron, TAS, 2955", "phone_number": "0495-403-281" }
+{ "id": "MEL01", "name": "Melbourne CBD", "email": "lori00@example.net", "city": "Melbourne", "hq_address": "3 Tiffany Round Stonehaven, WA, 2687", "phone_number": "(02) 6391 6842" }
+{ "id": "MEL02", "name": "Melbourne Airport", "email": "moralesbrandon@example.com", "city": "Melbourne", "hq_address": "57 Bryan Circuit New Jason, ACT, 2968", "phone_number": "0777304662" }
+{ "id": "AKL01", "name": "Auckland Airport", "email": "nfuller@example.com", "city": "Auckland", "hq_address": "976 Reeves Street Webbland 2011", "phone_number": "666 5759" }
+{ "id": "AKL02", "name": "Auckland CBD", "email": "jeremysmith@example.com", "city": "Auckland", "hq_address": "85 Webb Street MacDonaldmouth 5504", "phone_number": "+64273484326" }
+{ "id": "WLG01", "name": "Wellington CBD", "email": "jonathan47@example.net", "city": "Wellington", "hq_address": "7 Rowland Reserve RD 2 Arawaka 1086", "phone_number": "(04) 4059380" }
+{ "id": "SYD01", "name": "Sydney CBD", "email": "wardchristopher@example.com", "city": "Sydney", "hq_address": "Flat 95 2 Ernest Laneway Alyssaburgh, WA, 2675", "phone_number": "44428748" }
