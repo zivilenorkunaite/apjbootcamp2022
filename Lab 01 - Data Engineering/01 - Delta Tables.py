@@ -426,7 +426,7 @@ show_files_as_dataframe(table_location).display();
 # MAGIC delete from stores
 # MAGIC where id = 'BNE02';
 # MAGIC 
-# MAGIC SELECT * FROM table_changes('stores', 6) -- Note that we increment versions due to UPDATE statements above
+# MAGIC SELECT * FROM table_changes('stores', 8, 9) -- Note that we increment versions due to UPDATE statements above
 
 # COMMAND ----------
 
