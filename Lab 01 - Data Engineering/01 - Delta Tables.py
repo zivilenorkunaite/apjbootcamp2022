@@ -185,7 +185,8 @@ dbutils.fs.ls(table_location)
 
 def show_files_as_dataframe(files_location):
 
-  from pyspark.sql.types import ArrayType, StructField, StructType, StringType, IntegerType, LongType
+  from pyspark.sql.types import ArrayType, StructField, StructType, StringType, IntegerType, LongType, TimestampType
+  from pyspark.sql import functions as F
 
   # Assign dbutils output to a variable
   dbutils_output = dbutils.fs.ls(files_location)
@@ -197,11 +198,15 @@ def show_files_as_dataframe(files_location):
   schema = StructType([
       StructField('path', StringType(), True),
       StructField('name', StringType(), True),
-      StructField('size', IntegerType(), True)
+      StructField('size', IntegerType(), True),
+      StructField('modificationTime', LongType(), True)
   ])
 
   # Create data frame
-  files_df = spark.createDataFrame(rdd,schema)
+  files_df = spark.createDataFrame(rdd,schema).withColumn(
+    "modificationTime", 
+    (F.col("modificationTime")/1000).cast(TimestampType())
+  )
   return files_df
 
 # Call our new function to see current files
