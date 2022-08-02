@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC 
 # MAGIC # APJuice Lakehouse Platform
-# MAGIC <img src="https://drive.google.com/uc?export=view&id=1ztmSjkyi-FdzUdxakFbjIDS1HAhePN1s" style="width: 650px; max-width: 100%; height: auto" />
+# MAGIC <img src="https://github.com/zivilenorkunaite/apjbootcamp2022/blob/main/images/APJuiceLogo.png?raw=true" style="width: 650px; max-width: 100%; height: auto" />
 
 # COMMAND ----------
 
@@ -93,7 +93,7 @@ spark.sql(f"USE {database_name};")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://drive.google.com/uc?export=download&id=1TW_IbaaSMBYzMHbev6oTgoTWZVG2amUv" width=1012/>
+# MAGIC <img src="https://github.com/zivilenorkunaite/apjbootcamp2022/blob/main/images/APJuiceBootcampContext.png?raw=true" width=1012/>
 
 # COMMAND ----------
 
