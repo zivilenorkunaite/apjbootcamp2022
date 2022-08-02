@@ -2,7 +2,7 @@
 # MAGIC %md
 # MAGIC ### AP Juice Lakehouse Platform
 # MAGIC 
-# MAGIC <img src="https://drive.google.com/uc?export=download&id=1yILXlPbq_PA1KmOnQSc53wxhs-KKe41M" width=500/>
+# MAGIC <img src="https://github.com/zivilenorkunaite/apjbootcamp2022/blob/main/images/APJuiceLogo.png?raw=true" style="width: 650px; max-width: 100%; height: auto" />
 # MAGIC 
 # MAGIC 
 # MAGIC For this exercise we will be creating a data model in the gold layer in Lakehouse platform for our company, AP Juice.
@@ -18,7 +18,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC <img src="https://drive.google.com/uc?export=download&id=1cZJCR5Z_9VDG05u0VfKplDjk7k5r6Y7I" width=1012/>
+# MAGIC <img src="https://github.com/zivilenorkunaite/apjbootcamp2022/blob/main/images/ANZBootcampBatch.jpg?raw=true" width=1012/>
 
 # COMMAND ----------
 
