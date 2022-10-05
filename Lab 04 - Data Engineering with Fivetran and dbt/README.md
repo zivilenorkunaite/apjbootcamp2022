@@ -12,3 +12,5 @@ If the Salesforce and Azure SQL instances are not setup please setup them and :
 ## dbt Lab
 
 dbt Lab repo is accessible [here](https://github.com/lbk-fishtown/db-ft-dbt-bc)
+
+For reference, url is: https://github.com/lbk-fishtown/db-ft-dbt-bc
