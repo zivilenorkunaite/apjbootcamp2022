@@ -177,82 +177,7 @@ dbutils.fs.ls(table_location)
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC 
-# MAGIC It is a bit hard to read - what if we push dbutils results data to the DataFrame? We can create a python function to do this so we can use it again in the future.
-
-# COMMAND ----------
-
-def show_files_as_dataframe(files_location):
-
-  from pyspark.sql.types import ArrayType, StructField, StructType, StringType, IntegerType, LongType, TimestampType
-  from pyspark.sql import functions as F
-
-  # Assign dbutils output to a variable
-  dbutils_output = dbutils.fs.ls(files_location)
-
-  # Convert output to RDD
-  rdd = spark.sparkContext.parallelize(dbutils_output)
-
-  # Create a schema for this dataframe
-  schema = StructType([
-      StructField('path', StringType(), True),
-      StructField('name', StringType(), True),
-      StructField('size', IntegerType(), True),
-      StructField('modificationTime', LongType(), True)
-  ])
-
-  # Create data frame
-  files_df = spark.createDataFrame(rdd,schema).withColumn(
-    "modificationTime", 
-    (F.col("modificationTime")/1000).cast(TimestampType())
-  )
-  return files_df
-
-# Call our new function to see current files
-show_files_as_dataframe(table_location).display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC There is yet another way to see these files - it is by using `%fs ls file_path` magic command.
-# MAGIC You can try it out by filling in cell below with your table location path
-
-# COMMAND ----------
-
 # MAGIC %fs ls dbfs:/user/hive/warehouse/
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC ### Explore Delta Log
-# MAGIC 
-# MAGIC We can see that next to data stored in parquet file we have a *_delta_log/* folder - this is where the Log files can be found
-
-# COMMAND ----------
-
-log_files_location = f"{table_location}/_delta_log/"
-
-show_files_as_dataframe(log_files_location).display()
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC `00000000000000000000.json` has a very first commit logged for our table. Each change to the table will be creating a new _json_ file
-
-# COMMAND ----------
-
-first_log_file_location = f"{log_files_location}00000000000000000000.json"
-dbutils.fs.head(first_log_file_location)
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC Another way to see what is stored on our log file is to use `DESCRIBE HISTORY` command. 
 
 # COMMAND ----------
 
@@ -314,20 +239,6 @@ dbutils.fs.head(first_log_file_location)
 # MAGIC %sql
 # MAGIC 
 # MAGIC DESCRIBE HISTORY stores
-
-# COMMAND ----------
-
-# MAGIC %md 
-# MAGIC 
-# MAGIC We can also check what files storage location has now
-
-# COMMAND ----------
-
-show_files_as_dataframe(table_location + "/_delta_log/").display();
-
-# COMMAND ----------
-
-show_files_as_dataframe(table_location).display();
 
 # COMMAND ----------
 

@@ -22,7 +22,7 @@ data = spark.table("phytochemicals_quality")
 
 # DBTITLE 1,We can use our familiar pandas commands for data science (without sacrificing scalability)
 import pyspark.pandas as ps
-raw_data = data.to_pandas_on_spark()
+raw_data = data.to_pandas_api()
 
 # COMMAND ----------
 
