@@ -341,6 +341,7 @@ streaming_autoloader = df.writeStream \
   .format('delta') \
   .option('checkpointLocation', checkpoint_path) \
   .option("mergeSchema", "true") \
+  .trigger(processingTime='10 seconds') \
   .option("path", write_path) \
   .table('bronze_sales')
 
