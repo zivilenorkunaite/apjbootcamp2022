@@ -1,103 +1,80 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # AutoML Notebook
-# MAGIC Welcome to the parent notebook for AutoML. This notebook is used to start all the trials when you run AutoML from the Experiments UI. However, you typically do not need to modify or rerun this notebook. Instead, you should go to the AutoML Experiment, which has links to the data exploration notebook and each trial notebook.
+# MAGIC # AutoML Classification Notebook
+# MAGIC 
+# MAGIC This notebook will go through how to leverage AutoML in order to run a classification experiment.
+# MAGIC For more details:
+# MAGIC - See (AWS): https://docs.databricks.com/machine-learning/automl/train-ml-model-automl-api.html
+# MAGIC - See (Azure): https://learn.microsoft.com/en-au/azure/databricks/machine-learning/automl/train-ml-model-automl-api
 
 # COMMAND ----------
 
-dbutils.widgets.text("experiment_id", "")
-dbutils.widgets.text("target_col", "")
-dbutils.widgets.text("evaluation_metric", "")
-dbutils.widgets.text("data_dir", "")
-dbutils.widgets.text("timeout_minutes", "")
-dbutils.widgets.text("max_trials", "")
-dbutils.widgets.text("horizon", "")
-dbutils.widgets.text("frequency", "")
-dbutils.widgets.text("time_col", "")
-dbutils.widgets.text("identity_col", "")
-dbutils.widgets.text("dataset", "")
-dbutils.widgets.text("automl_url", "")
-dbutils.widgets.text("job_user", "")
-dbutils.widgets.text("problem_type", "")
+# MAGIC %run "./Utils/Fetch_User_Metadata"
 
 # COMMAND ----------
 
-automl_url = dbutils.widgets.get("automl_url")
+# Load Raw Data
+spark.sql(f"USE {DATABASE_NAME}")
+data = spark.table("phytochemicals_quality")
+
+# Train Test Split
+from sklearn.model_selection import train_test_split
+
+train_portion = 0.7
+valid_portion = 0.2
+test_portion = 0.1
+
+train_df, test_df = train_test_split(data.toPandas(), test_size=test_portion)
+train_df, valid_df = train_test_split(train_df, test_size= 1 - train_portion/(train_portion+valid_portion))
+
+# Just to make sure the maths worked out ;)
+assert round((train_df.shape[0] / (train_df.shape[0] + valid_df.shape[0] + test_df.shape[0])), 2) == train_portion
 
 # COMMAND ----------
 
-if automl_url != "":
-    %pip install "$automl_url"
+# DBTITLE 1,Load Features from the Feature Store
+from databricks.feature_store import FeatureLookup, FeatureStoreClient
+
+fs = FeatureStoreClient()
+
+feature_table = f"{DATABASE_NAME}.features_oj_prediction_experiment"
+
+feature_lookup = FeatureLookup(
+  table_name=feature_table,
+  #
+  #          Pull our calculated features from our feature store
+  #             |
+  #             |
+  feature_names=["h_concentration", "acidity_ratio"],
+  lookup_key = ["customer_id"]
+)
 
 # COMMAND ----------
 
-import databricks.automl
-import mlflow
-import pyspark
+# DBTITLE 1,Create Training and Testing Sets
+training_set = fs.create_training_set(
+  df=spark.createDataFrame(train_df),
+  feature_lookups=[feature_lookup],
+  label = 'quality',
+  exclude_columns="customer_id"
+)
+
+validation_set = fs.create_training_set(
+  df=spark.createDataFrame(valid_df),
+  feature_lookups=[feature_lookup],
+  label = 'quality',
+  exclude_columns="customer_id"
+)
+
+training_data = training_set.load_df().toPandas()
+validation_data = validation_set.load_df().toPandas()
 
 # COMMAND ----------
 
-experiment_id = dbutils.widgets.get("experiment_id")
-target_col = dbutils.widgets.get("target_col")
-evaluation_metric = dbutils.widgets.get("evaluation_metric")
-data_dir = dbutils.widgets.get("data_dir")
-timeout_minutes = dbutils.widgets.get("timeout_minutes")
-max_trials = dbutils.widgets.get("max_trials")
-horizon = dbutils.widgets.get("horizon")
-frequency = dbutils.widgets.get("frequency")
-time_col = dbutils.widgets.get("time_col")
-identity_col = dbutils.widgets.get("identity_col")
-dataset = dbutils.widgets.get("dataset")
-job_user = dbutils.widgets.get("job_user")
-problem_type = dbutils.widgets.get("problem_type")
-
-kwargs = {
-  "target_col": target_col,
-  "home_dir": f"/Users/{job_user}",
-  "metric": evaluation_metric,
-  "time_col": time_col
-}
-
-if max_trials:
-    kwargs["max_trials"] = int(max_trials)
-else:
-    kwargs["max_trials"] = 1e10
-
-if timeout_minutes:
-    kwargs["timeout_minutes"] = int(timeout_minutes)
-
-if data_dir:
-    kwargs["data_dir"] = data_dir
-
-if problem_type == "Forecasting":
-  kwargs["horizon"] = int(horizon)
-  kwargs["frequency"] = frequency
-  if identity_col:
-    kwargs["identity_col"] = identity_col.split(",")
-kwargs
+# DBTITLE 1,Run AutoML
+from databricks import automl
+summary = automl.classify(training_data, target_col="quality", timeout_minutes=30)
 
 # COMMAND ----------
 
-experiment = mlflow.get_experiment(experiment_id)
-kwargs["experiment"] = experiment
-experiment
 
-# COMMAND ----------
-
-spark = pyspark.sql.session.SparkSession.builder.getOrCreate()
-df = spark.table(dataset)
-kwargs["dataset"] = df
-df
-
-# COMMAND ----------
-
-if problem_type == "Classification":
-  classifier = databricks.automl.classifier.Classifier(context_type=databricks.automl.ContextType.DATABRICKS)
-  classifier.fit(**kwargs)
-elif problem_type == "Regression":
-  regressor = databricks.automl.regressor.Regressor(context_type=databricks.automl.ContextType.DATABRICKS)
-  regressor.fit(**kwargs)
-elif problem_type == "Forecasting":
-  from databricks.automl.forecast import Forecast
-  forecastor = Forecast(context_type=databricks.automl.ContextType.DATABRICKS)
-  forecastor.fit(**kwargs)
