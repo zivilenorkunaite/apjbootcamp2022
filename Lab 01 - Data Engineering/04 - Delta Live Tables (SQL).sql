@@ -25,6 +25,7 @@
 
 -- COMMAND ----------
 
+-- Sales table with all transactions
 CREATE INCREMENTAL LIVE TABLE bronze_sales_dlt
 TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Bronze sales table with all transactions"
@@ -51,7 +52,11 @@ CREATE TEMPORARY LIVE TABLE dim_locations_dlt
 TBLPROPERTIES ("quality" = "lookup")
 COMMENT "Store locations dimension - not included in database"
 AS 
-SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
+SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'BNE02', 'MEL02', 'PER01', 'CBR01') 
+               then 'AUS' 
+               when id in ('AKL01', 'AKL02', 'WLG01') 
+               then 'NZL' 
+          end as country_code 
 FROM  
 json.`/FileStore/${mypipeline.data_path}/deltademoasset/stores.json`;
 
