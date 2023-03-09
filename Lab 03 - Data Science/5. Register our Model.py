@@ -65,7 +65,7 @@ all_runs.head()
 best_run = mlflow.search_runs(
   experiment_ids=[experiment_id],
   filter_string="status = 'FINISHED'",
-  order_by=["metrics.val_roc_auc_score desc"],
+  order_by=["metrics.val_roc_auc desc"],
   max_results=1
 )
 
@@ -77,7 +77,7 @@ best_run
 worst_run = mlflow.search_runs(
   experiment_ids=[experiment_id],
   filter_string="status = 'FINISHED'",
-  order_by=["metrics.val_roc_auc_score asc"],
+  order_by=["metrics.val_roc_auc asc"],
   max_results=1
 )
 
@@ -168,8 +168,22 @@ spark.udf.register(
 
 # COMMAND ----------
 
+# DBTITLE 1,And use the spark UDF in %sql
 # MAGIC %sql 
 # MAGIC select *, quality_prediction_model(*) as quality_predictions from X_validation
+
+# COMMAND ----------
+
+# DBTITLE 1,We also can create a pandas UDF and use it with pyspark dataframe
+valid_df = spark.read.table("X_validation").toPandas()
+predict_udf = mlflow.pyfunc.spark_udf(spark, production_model.source)
+features = valid_df.columns
+spark_df = spark.createDataFrame(valid_df)
+display(spark_df.withColumn("prediction", predict_udf(*features)))
+
+# COMMAND ----------
+
+
 
 # COMMAND ----------
 
@@ -177,6 +191,11 @@ spark.udf.register(
 # MAGIC 
 # MAGIC ## Let's now register this model for real time inference
 # MAGIC <br>
-# MAGIC <div style="float:right">
-# MAGIC <img src="https://databricks.com//wp-content/uploads/2020/06/blog-mlflow-model-3.gif" >
+# MAGIC <div>
+# MAGIC <img src="https://cms.databricks.com/sites/default/files/inline-images/db-498-blog-imgs-1.png" >
+# MAGIC 
 # MAGIC </div>
+
+# COMMAND ----------
+
+
