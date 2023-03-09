@@ -254,9 +254,10 @@ experiment_id = <>
 # DBTITLE 1,We use mlflow's sklearn flavour to log and evaluate our model as an experiment run
 import mlflow
 import pandas as pd
+from mlflow.models.signature import infer_signature
 
-# Enable automatic logging of input samples, metrics, parameters, and models
-mlflow.sklearn.autolog(log_input_examples=True, silent=True)
+# Enable automatic logging of input samples, metrics, parameters, model signtures and models
+mlflow.sklearn.autolog(log_input_examples=True, log_model_signatures=True, log_models=True)
 
 with mlflow.start_run(run_name="random_forest_pipeline",
                       experiment_id=experiment_id) as mlflow_run:
@@ -277,13 +278,16 @@ with mlflow.start_run(run_name="random_forest_pipeline",
     # From MLflow 2.x use this to log validation metrics
 
     # Log the model first and extract the uri
-    mlflow.sklearn.log_model(rf_model, "model")
+    #mlflow.sklearn.log_model(rf_model, "model")
     model_uri = mlflow.get_artifact_uri("model")
 
     # Evaluate and log the model results
     results = mlflow.evaluate(model=model_uri, data=validation_dataset, 
                               targets='quality', model_type="classifier",
                              evaluator_config = {'metric_prefix':"val_"})
+    
+    # Need to log model signatures, otherwise it will fail when using spark_udf for the distributed inference
+    signature = infer_signature(X_training, rf_model.predict(X_training))
 
 
 # COMMAND ----------
@@ -350,7 +354,7 @@ with mlflow.start_run(run_name="random_forest_pipeline_2", experiment_id=experim
     # From MLflow 2.x use this to log validation metrics
 
     # Log the model first and extract the uri
-    mlflow.sklearn.log_model(rf_model, "model")
+    #mlflow.sklearn.log_model(rf_model, "model")
     model_uri = mlflow.get_artifact_uri("model")
 
     # Evaluate and log the model results
@@ -360,6 +364,9 @@ with mlflow.start_run(run_name="random_forest_pipeline_2", experiment_id=experim
 
     shap_fig = generate_shap_plot(rf_model, X_validation)
     mlflow.log_artifact(f"/dbfs/FileStore/{USERNAME}_shap_plot.png")
+    
+    # Need to log model signatures, otherwise it will fail when using spark_udf for the distributed inference
+    signature = infer_signature(X_training, rf_model.predict(X_training))
 
 # COMMAND ----------
 
