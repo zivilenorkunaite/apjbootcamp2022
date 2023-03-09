@@ -402,6 +402,11 @@ search_space = {
 
 # COMMAND ----------
 
+# we need to fix the experiment for the nesting to work properly
+mlflow.set_experiment(experiment_id=experiment_id)
+
+# COMMAND ----------
+
 # DBTITLE 1,We begin by defining our objective function
 # With MLflow autologging, hyperparameters and the trained model are automatically logged to MLflow.
 from mlflow.models.signature import infer_signature
@@ -441,7 +446,7 @@ def f_train(trial_params):
 spark_trials = SparkTrials(parallelism=10)
 
 # Run fmin within an MLflow run context so that each hyperparameter configuration is logged as a child run of a parent
-with mlflow.start_run(run_name='xgboost_models', experiment_id=experiment_id) as mlflow_run:
+with mlflow.start_run(run_name='xgboost_models') as mlflow_run:
   best_params = fmin(
     fn=f_train, 
     space=search_space, 
