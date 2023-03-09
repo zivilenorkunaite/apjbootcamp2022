@@ -110,8 +110,13 @@ validation_data = validation_set.load_df().toPandas()
 X_training = training_data.drop(columns=['quality'], axis=1)
 y_training = (training_data['quality'] == "Good").astype(int)
 
+# MLflow 1.x required validation in this format
 X_validation = validation_data.drop(columns=['quality'], axis=1)
 y_validation = (validation_data['quality'] == "Good").astype(int)
+
+# MLFLow API change in 2.x means we need the validation as a single data table
+validation_dataset = validation_data
+validation_dataset['quality'] = (validation_data['quality'] == "Good").astype(int)
 
 # Gather the numerical and categorical features
 numerical_features = X_training._get_numeric_data().columns.tolist()
@@ -261,12 +266,25 @@ with mlflow.start_run(run_name="random_forest_pipeline",
     # Log our parameters
     mlflow.log_params(rf_params)
     
+    # This method was deprecated from MLflow 2.x and removed
     # Training metrics are logged by MLflow autologging
     # Log metrics for the validation set
-    mlflow.sklearn.eval_and_log_metrics(rf_model,
-                                        X_validation,
-                                        y_validation,
-                                        prefix="val_")
+    #mlflow.sklearn.eval_and_log_metrics(rf_model,
+    #                                    X_validation,
+    #                                    y_validation,
+    #                                    prefix="val_")
+
+    # From MLflow 2.x use this to log validation metrics
+
+    # Log the model first and extract the uri
+    mlflow.sklearn.log_model(rf_model, "model")
+    model_uri = mlflow.get_artifact_uri("model")
+
+    # Evaluate and log the model results
+    results = mlflow.evaluate(model=model_uri, data=validation_dataset, 
+                              targets='quality', model_type="classifier",
+                             evaluator_config = {'metric_prefix':"val_"})
+
 
 # COMMAND ----------
 
@@ -321,12 +339,25 @@ with mlflow.start_run(run_name="random_forest_pipeline_2", experiment_id=experim
     # Log our parameters
     mlflow.log_params(rf_params)
     
+    # This method was deprecated from MLflow 2.x and removed
     # Training metrics are logged by MLflow autologging
     # Log metrics for the validation set
-    mlflow.sklearn.eval_and_log_metrics(rf_model,
-                                        X_validation,
-                                        y_validation,
-                                        prefix="val_")
+    #mlflow.sklearn.eval_and_log_metrics(rf_model,
+    #                                    X_validation,
+    #                                    y_validation,
+    #                                    prefix="val_")
+    
+    # From MLflow 2.x use this to log validation metrics
+
+    # Log the model first and extract the uri
+    mlflow.sklearn.log_model(rf_model, "model")
+    model_uri = mlflow.get_artifact_uri("model")
+
+    # Evaluate and log the model results
+    results = mlflow.evaluate(model=model_uri, data=validation_dataset, 
+                              targets='quality', model_type="classifier",
+                             evaluator_config = {'metric_prefix':"val_"})
+
     shap_fig = generate_shap_plot(rf_model, X_validation)
     mlflow.log_artifact(f"/dbfs/FileStore/{USERNAME}_shap_plot.png")
 
