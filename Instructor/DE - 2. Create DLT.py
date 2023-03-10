@@ -23,7 +23,7 @@ dlt_pipeline_name = "apjbootcamp-DLT-demo"
 target_db = "apjdatabricksbootcamp"
 current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
 
-dlt_pipeline_location = f"/Repos/{current_user_id}/apjbootcamp2022/Lab 0X - Data Engineering/02 - Transform"
+dlt_pipeline_location = f"/Repos/{current_user_id}/apjbootcamp2022/Lab 01 - Data Engineering/02 - Transform"
 notebook_paths = [{"notebook": {"path": dlt_pipeline_location}}]
 
 cluster_config = [{"label": "default", "num_workers": 1}]
