@@ -18,7 +18,7 @@
 
 # COMMAND ----------
 
-datasets_location = '/tmp/databricksbootcamp/datasets/'
+datasets_location = '/FileStore/tmp/databricksbootcamp/datasets/'
 
 dbutils.fs.rm(datasets_location, True)
 

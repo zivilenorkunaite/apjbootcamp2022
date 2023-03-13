@@ -5,7 +5,7 @@
 
 # COMMAND ----------
 
-cloud_storage_path = '/tmp/databricksbootcamp/datasets/products/products.json'
+cloud_storage_path = '/FileStore/tmp/databricksbootcamp/datasets/products/products.json'
 df = spark.read.json(cloud_storage_path)
 
 # COMMAND ----------
@@ -22,6 +22,13 @@ df = spark.read.json(cloud_storage_path)
 
 # Explore customers dataset
 
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ## TODO
+# MAGIC Using COPY INTO
 
 # COMMAND ----------
 
@@ -95,4 +102,13 @@ today = datetime.datetime.now()
 
 unique_forecast_id = f"forecast{lat}{long}{today}"
 
-df.write.mode('Overwrite').json(f"{datasets_location}/unique_forecast_id.json")
+df.write.mode('Overwrite').json(f"{datasets_location}/{unique_forecast_id}.json")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC 
+# MAGIC ## TODO
+# MAGIC 
+# MAGIC Partner connect demo
