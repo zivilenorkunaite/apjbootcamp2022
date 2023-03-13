@@ -156,6 +156,61 @@ APPLY CHANGES INTO LIVE.silver_sales
 
 -- COMMAND ----------
 
+CREATE STREAMING LIVE TABLE silver_sales_items_clean (
+  CONSTRAINT `All custom juice must have ingredients` EXPECT (NOT(product_id = 'Custom' and size(product_ingredients) = 0))
+) 
+TBLPROPERTIES ("quality" = "silver")
+COMMENT "Silver table with clean transaction records" AS
+
+SELECT
+    id || "-" || cast(pos as string) as id,
+    id as sale_id,
+    ts as sale_ts,
+    store_id,
+    pos as item_number,
+    col.id as product_id,
+    col.size as product_size,
+    col.notes as product_notes,
+    col.cost as product_cost,
+    col.ingredients as product_ingredients
+  from
+    (
+  select
+    *,
+    posexplode(
+      from_json(
+        sale_items,
+        'array<struct<id:string,size:string,notes:string,cost:double,ingredients:array<string>>>'
+      )
+    ) 
+  from
+    (
+      SELECT
+    id as id,
+    ts as ts,
+    store_id as store_id,
+    customer_id as customer_id,
+    store_id || "-" || cast(customer_id as string) as unique_customer_id,
+    order_source as order_source,
+    STATE as order_state,
+    sale_items as sale_items
+  from STREAM(live.bronze_sales)
+    )
+)
+
+
+-- COMMAND ----------
+
+CREATE OR REFRESH STREAMING LIVE TABLE silver_sales_items;
+
+APPLY CHANGES INTO LIVE.silver_sales_items
+  FROM STREAM(live.silver_sales_items_clean)
+  KEYS (id)
+  SEQUENCE BY (sale_ts, item_number)
+
+
+-- COMMAND ----------
+
 -- MAGIC %md
 -- MAGIC 
 -- MAGIC ## Dimension tables in Silver layer
@@ -225,20 +280,8 @@ from
       explode(
         arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain)
       ) as t
-    from
-      (
-        select
-          latitude,
-          longitude,
-          timezone,
-          generationtime_ms,
-          from_json(
-            hourly,
-            'struct<time:array<timestamp>,temperature_2m:array<decimal>,rain:array<decimal>>'
-          ) as hourly
-        from
-          STREAM(live.bronze_weather)
-      )
+    from STREAM(live.bronze_weather)
+
   )
 
 -- COMMAND ----------
@@ -255,9 +298,14 @@ from
 
 -- REMOVE COMMENT AND FINISH WRITING THIS SQL
 
--- CREATE OR REFRESH STREAMING LIVE TABLE silver_weather;
+CREATE OR REFRESH STREAMING LIVE TABLE silver_weather;
 
--- APPLY CHANGES INTO LIVE.silver_weather FROM 
+APPLY CHANGES INTO LIVE.silver_weather FROM 
+ stream(live.silver_weather_clean)
+  KEYS (pk)
+  IGNORE NULL UPDATES
+  SEQUENCE BY generationstime_ms
+  STORED AS SCD TYPE 1
 
 -- COMMAND ----------
 
@@ -269,9 +317,15 @@ from
 
 -- COMMAND ----------
 
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC ### Enrich dataset with lookup table
+
+-- COMMAND ----------
+
 CREATE LIVE TABLE country_sales
-select l.country_code, count(distinct s.id) as number_of_sales
-from live.silver_sales s 
+select l.country_code, sum(product_cost) as total_sales, count(distinct sale_id) as number_of_sales
+from live.silver_sales_items s 
   join live.silver_stores l on s.store_id = l.id
 group by l.country_code;
 
@@ -286,6 +340,4 @@ group by l.country_code;
 -- MAGIC 
 -- MAGIC ### Advanced option
 -- MAGIC 
--- MAGIC Create another gold table, but this time using python. Note - you will need to use a new notebook for it and later add it to your existing DLT pipeline.
--- MAGIC 
--- MAGIC You can also create a silver_sales_item table with each row containing information about specific juice sold and get more insights about most popular combinations!
+-- MAGIC Create another gold table, but this time using python. Note - you will need to use a new notebook for it and later add it to your existing DLT pipeline

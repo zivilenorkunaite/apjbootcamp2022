@@ -9,7 +9,7 @@
 
 # COMMAND ----------
 
-# MAGIC %run ./Utils/prepare-lab-environment
+# MAGIC %run ./Utils/prepare-lab-environment-instructor
 
 # COMMAND ----------
 
@@ -42,6 +42,7 @@ df = spark.read.json(products_cloud_storage_location)
 
 # Explore customers dataset
 
+df.display()
 
 # COMMAND ----------
 
@@ -75,9 +76,20 @@ COPY_OPTIONS ('mergeSchema' = 'true')
 
 # COMMAND ----------
 
+dbutils.fs.ls(datasets_location)
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC 
-# MAGIC -- CREATE TABLE IF NOT EXISTS my_storess;
+# MAGIC CREATE TABLE IF NOT EXISTS my_stores;
+# MAGIC 
+# MAGIC 
+# MAGIC COPY INTO my_stores 
+# MAGIC FROM '/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/'
+# MAGIC FILEFORMAT = json
+# MAGIC FORMAT_OPTIONS ('mergeSchema' = 'true')
+# MAGIC COPY_OPTIONS ('mergeSchema' = 'true')
 
 # COMMAND ----------
 
@@ -86,10 +98,49 @@ COPY_OPTIONS ('mergeSchema' = 'true')
 # MAGIC ## Advanced Task
 # MAGIC 
 # MAGIC What would that look using autoloader? You can find syntax for it here: https://docs.databricks.com/getting-started/etl-quick-start.html
+# MAGIC 
+# MAGIC You can also use `generate_more_orders()` and see how only new records are picked up on the next autoloader run.
 
 # COMMAND ----------
 
 # Optional: write autoloader statement to load sales records
+
+# Import functions
+from pyspark.sql.functions import input_file_name, current_timestamp
+
+# Define variables used in code below
+file_path = f'{datasets_location}sales/'
+table_name = f"my_sales_autoloader"
+checkpoint_path = f"/tmp/{current_user_id}/_checkpoint/etl_quickstart"
+
+# Clear out data from previous demo execution
+spark.sql(f"DROP TABLE IF EXISTS {table_name}")
+dbutils.fs.rm(checkpoint_path, True)
+
+
+# COMMAND ----------
+
+# Configure Auto Loader to ingest JSON data to a Delta table
+(spark.readStream
+  .format("cloudFiles")
+  .option("cloudFiles.format", "json")
+  .option("cloudFiles.schemaLocation", checkpoint_path)
+  .load(file_path)
+  .select("*", input_file_name().alias("source_file"), current_timestamp().alias("processing_time"))
+  .writeStream
+  .option("checkpointLocation", checkpoint_path)
+  .trigger(availableNow=True)
+  .toTable(table_name))
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC select count(*) from my_sales_autoloader
+
+# COMMAND ----------
+
+generate_more_orders()
 
 # COMMAND ----------
 
@@ -134,8 +185,8 @@ response = requests.get(url)
 
 if response.status_code == 200:
   json_data = sc.parallelize([response.text])
-  df = spark.read.json(json_data)
-  df.display()
+  weather_df = spark.read.json(json_data)
+  weather_df.display()
 
 else:
   print('Check your URL for errors!')
@@ -158,7 +209,27 @@ else:
 
 # COMMAND ----------
 
-# Create a temperature over time visualisation
+weather_df.createOrReplaceTempView('weather_table')
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC select
+# MAGIC   t.*
+# MAGIC from
+# MAGIC   (
+# MAGIC     select
+# MAGIC       latitude,
+# MAGIC       longitude,
+# MAGIC       timezone,
+# MAGIC       generationtime_ms,
+# MAGIC       explode(
+# MAGIC         arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain)
+# MAGIC       ) as t
+# MAGIC     from
+# MAGIC           weather_table
+# MAGIC       )
 
 # COMMAND ----------
 
