@@ -223,7 +223,7 @@ from
       timezone,
       generationtime_ms,
       explode(
-        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain)
+        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain) 
       ) as t
     from
       (
@@ -234,7 +234,9 @@ from
           generationtime_ms,
           from_json(
             hourly,
-            'struct<time:array<timestamp>,temperature_2m:array<decimal>,rain:array<decimal>>'
+            schema_of_json(
+              '{"rain": [0, 0.1, 0.1], "temperature_2m": [21.9, 21.6, 21], "time": ["2023-03-01T00:00", "2023-03-01T01:00", "2023-03-01T02:00"]}'
+            )
           ) as hourly
         from
           STREAM(live.bronze_weather)

@@ -51,7 +51,7 @@ TBLPROPERTIES ("quality" = "cdc")
 COMMENT "CDC records for our products dataset"
 AS 
 SELECT * FROM 
-cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/products_cdc/' , "json") ;
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/products_cdc/' , "json") ;
 
 -- COMMAND ----------
 
@@ -157,47 +157,52 @@ APPLY CHANGES INTO LIVE.silver_sales
 -- COMMAND ----------
 
 CREATE STREAMING LIVE TABLE silver_sales_items_clean (
-  CONSTRAINT `All custom juice must have ingredients` EXPECT (NOT(product_id = 'Custom' and size(product_ingredients) = 0))
-) 
-TBLPROPERTIES ("quality" = "silver")
-COMMENT "Silver table with clean transaction records" AS
-
-SELECT
-    id || "-" || cast(pos as string) as id,
-    id as sale_id,
-    ts as sale_ts,
-    store_id,
-    pos as item_number,
-    col.id as product_id,
-    col.size as product_size,
-    col.notes as product_notes,
-    col.cost as product_cost,
-    col.ingredients as product_ingredients
-  from
-    (
-  select
-    *,
-    posexplode(
-      from_json(
-        sale_items,
-        'array<struct<id:string,size:string,notes:string,cost:double,ingredients:array<string>>>'
-      )
-    ) 
-  from
-    (
-      SELECT
-    id as id,
-    ts as ts,
-    store_id as store_id,
-    customer_id as customer_id,
-    store_id || "-" || cast(customer_id as string) as unique_customer_id,
-    order_source as order_source,
-    STATE as order_state,
-    sale_items as sale_items
-  from STREAM(live.bronze_sales)
+  CONSTRAINT `All custom juice must have ingredients` EXPECT (
+    NOT(
+      product_id = 'Custom'
+      and product_ingredients is null
     )
-)
-
+  )
+) 
+TBLPROPERTIES ("quality" = "silver") 
+COMMENT "Silver table with clean transaction records" 
+AS
+SELECT
+  id || "-" || cast(pos as string) as id,
+  id as sale_id,
+  ts as sale_ts,
+  store_id,
+  pos as item_number,
+  col.id as product_id,
+  col.size as product_size,
+  col.notes as product_notes,
+  col.cost as product_cost,
+  col.ingredients as product_ingredients
+from
+  (
+    select
+      *,
+      posexplode(
+        from_json(
+          sale_items,
+          'ARRAY<STRUCT<cost: STRING, id: STRING, ingredients: STRING, notes: STRING, size: STRING>>'
+        )
+      )
+    from
+      (
+        SELECT
+          id as id,
+          ts as ts,
+          store_id as store_id,
+          customer_id as customer_id,
+          store_id || "-" || cast(customer_id as string) as unique_customer_id,
+          order_source as order_source,
+          STATE as order_state,
+          sale_items as sale_items
+        from
+          STREAM(live.bronze_sales)
+      )
+  )
 
 -- COMMAND ----------
 
@@ -278,10 +283,24 @@ from
       timezone,
       generationtime_ms,
       explode(
-        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain)
+        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain) 
       ) as t
-    from STREAM(live.bronze_weather)
-
+    from
+      (
+        select
+          latitude,
+          longitude,
+          timezone,
+          generationtime_ms,
+          from_json(
+            hourly,
+            schema_of_json(
+              '{"rain": [0, 0.1, 0.1], "temperature_2m": [21.9, 21.6, 21], "time": ["2023-03-01T00:00", "2023-03-01T01:00", "2023-03-01T02:00"]}'
+            )
+          ) as hourly
+        from
+          STREAM(live.bronze_weather)
+      )
   )
 
 -- COMMAND ----------
@@ -304,7 +323,7 @@ APPLY CHANGES INTO LIVE.silver_weather FROM
  stream(live.silver_weather_clean)
   KEYS (pk)
   IGNORE NULL UPDATES
-  SEQUENCE BY generationstime_ms
+  SEQUENCE BY generationtime_ms
   STORED AS SCD TYPE 1
 
 -- COMMAND ----------
@@ -324,8 +343,8 @@ APPLY CHANGES INTO LIVE.silver_weather FROM
 -- COMMAND ----------
 
 CREATE LIVE TABLE country_sales
-select l.country_code, sum(product_cost) as total_sales, count(distinct sale_id) as number_of_sales
-from live.silver_sales_items s 
+select l.country_code, count(distinct s.id) as number_of_sales
+from live.silver_sales s 
   join live.silver_stores l on s.store_id = l.id
 group by l.country_code;
 
@@ -341,3 +360,42 @@ group by l.country_code;
 -- MAGIC ### Advanced option
 -- MAGIC 
 -- MAGIC Create another gold table, but this time using python. Note - you will need to use a new notebook for it and later add it to your existing DLT pipeline
+
+-- COMMAND ----------
+
+CREATE LIVE TABLE daily_sales_and_weather with weather as (
+  select
+    date_trunc('day', time) as day,
+    avg(temperature_2m) as average_temperature
+  from
+    live.silver_weather
+  where
+    temperature_2m is not null
+  group by
+    1
+),
+sales as (
+  select
+    date_trunc('day', sale_ts) as day,
+    avg(total_sale_cost) as average_daily_cost,
+    sum(total_sale_cost) as total_daily_cost
+  from
+    (
+      select
+        sale_ts,
+        sale_id,
+        sum(product_cost) as total_sale_cost
+      from
+        live.silver_sales_items
+      group by
+        1,
+        2
+    )
+    group by 1
+)
+select
+  sales.*,
+  weather.average_temperature
+from
+  sales
+  left join weather on sales.day = weather.day

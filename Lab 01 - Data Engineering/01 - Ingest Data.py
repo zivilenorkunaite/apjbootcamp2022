@@ -170,7 +170,7 @@ today = datetime.datetime.now()
 
 unique_forecast_id = f"forecast{lat}{long}{today}"
 
-df.write.mode('Overwrite').json(f"{datasets_location}weather/{unique_forecast_id}.json")
+weather_df.write.mode('Overwrite').json(f"{datasets_location}weather/{unique_forecast_id}.json")
 
 # COMMAND ----------
 
