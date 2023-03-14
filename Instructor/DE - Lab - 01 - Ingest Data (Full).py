@@ -86,7 +86,7 @@ dbutils.fs.ls(datasets_location)
 # MAGIC 
 # MAGIC 
 # MAGIC COPY INTO my_stores 
-# MAGIC FROM '/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/'
+# MAGIC FROM '/tmp/apjdatabricksbootcamp/datasets/stores/'
 # MAGIC FILEFORMAT = json
 # MAGIC FORMAT_OPTIONS ('mergeSchema' = 'true')
 # MAGIC COPY_OPTIONS ('mergeSchema' = 'true')
@@ -111,7 +111,7 @@ from pyspark.sql.functions import input_file_name, current_timestamp
 # Define variables used in code below
 file_path = f'{datasets_location}sales/'
 table_name = f"my_sales_autoloader"
-checkpoint_path = f"/tmp/{current_user_id}/_checkpoint/etl_quickstart"
+checkpoint_path = f"/FileStore/tmp/{current_user_id}/_checkpoint/etl_quickstart"
 
 # Clear out data from previous demo execution
 spark.sql(f"DROP TABLE IF EXISTS {table_name}")
@@ -237,12 +237,11 @@ weather_df.createOrReplaceTempView('weather_table')
 
 import datetime 
 
-weather_datasets_location = f'/tmp/{current_user_id}/datasets/weather'
 today = datetime.datetime.now()
 
 unique_forecast_id = f"forecast{lat}{long}{today}"
 
-df.write.mode('Overwrite').json(f"{weather_datasets_location}/{unique_forecast_id}.json")
+weather_df.write.mode('Overwrite').json(f"{datasets_location}/weather/{unique_forecast_id}.json")
 
 # COMMAND ----------
 

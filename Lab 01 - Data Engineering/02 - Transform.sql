@@ -31,7 +31,7 @@ COMMENT "Bronze sales table with all transactions"
 AS 
 SELECT * 
 FROM
-cloud_files( '/tmp/databricksbootcamp/datasets/sales/' , "json") 
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/sales/' , "json") 
 
 -- COMMAND ----------
 
@@ -41,7 +41,7 @@ COMMENT "Store locations dimension"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
-cloud_files('/tmp/databricksbootcamp/datasets/stores/' , 'json');
+cloud_files('/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/' , 'json');
 
 -- COMMAND ----------
 
@@ -51,7 +51,7 @@ TBLPROPERTIES ("quality" = "cdc")
 COMMENT "CDC records for our products dataset"
 AS 
 SELECT * FROM 
-cloud_files( '/tmp/databricksbootcamp/datasets/products_cdc/' , "json") ;
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/products_cdc/' , "json") ;
 
 -- COMMAND ----------
 
@@ -70,7 +70,7 @@ cloud_files( '/tmp/databricksbootcamp/datasets/products_cdc/' , "json") ;
 -- MAGIC %python
 -- MAGIC 
 -- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
--- MAGIC weather_files_location = f"/tmp/{current_user_id}/datasets/weather/"
+-- MAGIC weather_files_location = f"/FileStore/tmp/{current_user_id}/datasets/weather/"
 -- MAGIC print(weather_files_location)
 
 -- COMMAND ----------
@@ -80,7 +80,7 @@ TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Records from weather api"
 AS 
 SELECT * FROM 
-cloud_files( '/tmp/databricksbootcamp/datasets/weather/' , "json") ;
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/weather/' , "json") ;
 
 -- COMMAND ----------
 
@@ -223,7 +223,7 @@ from
       timezone,
       generationtime_ms,
       explode(
-        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain)
+        arrays_zip(hourly.time, hourly.temperature_2m, hourly.rain) 
       ) as t
     from
       (
@@ -234,7 +234,9 @@ from
           generationtime_ms,
           from_json(
             hourly,
-            'struct<time:array<timestamp>,temperature_2m:array<decimal>,rain:array<decimal>>'
+            schema_of_json(
+              '{"rain": [0, 0.1, 0.1], "temperature_2m": [21.9, 21.6, 21], "time": ["2023-03-01T00:00", "2023-03-01T01:00", "2023-03-01T02:00"]}'
+            )
           ) as hourly
         from
           STREAM(live.bronze_weather)
