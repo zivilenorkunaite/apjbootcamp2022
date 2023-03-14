@@ -166,12 +166,11 @@ else:
 
 import datetime 
 
-weather_datasets_location = f'/tmp/{current_user_id}/datasets/weather'
 today = datetime.datetime.now()
 
 unique_forecast_id = f"forecast{lat}{long}{today}"
 
-df.write.mode('Overwrite').json(f"{weather_datasets_location}/{unique_forecast_id}.json")
+df.write.mode('Overwrite').json(f"{datasets_location}weather/{unique_forecast_id}.json")
 
 # COMMAND ----------
 

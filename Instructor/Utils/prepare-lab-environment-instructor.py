@@ -292,30 +292,6 @@ def generate_sales_dataset(n = 3):
 
 # COMMAND ----------
 
-# get some weather API data
-
-import requests
-import json
-
-# Sydney
-lat = -33.868820
-long = 151.209290
-
-
-url = f'https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={long}&current_weather=true&hourly=temperature_2m,rain&timezone=auto'
-
-response = requests.get(url)
-
-if response.status_code == 200:
-  today = datetime.datetime.now()
-  spark.read.json(sc.parallelize([response.text])).write.mode('Overwrite').json(f"{datasets_location}weather/weather-forecast-{today.strftime('%Y-%m-%d')}.json")
-
-else:
-  print('Check your URL for errors!')
-  print(response.reason)
-
-# COMMAND ----------
-
 # rewrite product dataset as CDC feed for inserts
 
 spark.sql(f"""

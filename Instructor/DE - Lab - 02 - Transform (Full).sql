@@ -31,7 +31,7 @@ COMMENT "Bronze sales table with all transactions"
 AS 
 SELECT * 
 FROM
-cloud_files( '/tmp/databricksbootcamp/datasets/sales/' , "json") 
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/sales/' , "json") 
 
 -- COMMAND ----------
 
@@ -41,7 +41,7 @@ COMMENT "Store locations dimension"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
-cloud_files('/tmp/databricksbootcamp/datasets/stores/' , 'json');
+cloud_files('/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/' , 'json');
 
 -- COMMAND ----------
 
@@ -51,7 +51,7 @@ TBLPROPERTIES ("quality" = "cdc")
 COMMENT "CDC records for our products dataset"
 AS 
 SELECT * FROM 
-cloud_files( '/tmp/databricksbootcamp/datasets/products_cdc/' , "json") ;
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/products_cdc/' , "json") ;
 
 -- COMMAND ----------
 
@@ -70,7 +70,7 @@ cloud_files( '/tmp/databricksbootcamp/datasets/products_cdc/' , "json") ;
 -- MAGIC %python
 -- MAGIC 
 -- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
--- MAGIC weather_files_location = f"/tmp/{current_user_id}/datasets/weather/"
+-- MAGIC weather_files_location = f"/FileStore/tmp/{current_user_id}/datasets/weather/"
 -- MAGIC print(weather_files_location)
 
 -- COMMAND ----------
@@ -80,7 +80,7 @@ TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Records from weather api"
 AS 
 SELECT * FROM 
-cloud_files( '/tmp/databricksbootcamp/datasets/weather/' , "json") ;
+cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/weather/' , "json") ;
 
 -- COMMAND ----------
 
