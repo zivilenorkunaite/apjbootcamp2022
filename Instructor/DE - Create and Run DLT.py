@@ -141,6 +141,12 @@ def create_dlt_pipeline():
 
 def create_new_job(dlt_pipeline_id, query_id, warehouse_id):
   job_id = ''
+  if api_host.endswith(".azuredatabricks.net"):
+    # Azure instance type
+    instance_type = 'Standard_DS3_v2'
+  else:
+    # Use AWS instance type
+    instance_type = 'i3.xlarge'
   
   new_job = jobs.client.create_job(
     name=workflow_name,
@@ -156,9 +162,7 @@ def create_new_job(dlt_pipeline_id, query_id, warehouse_id):
             "retry_on_timeout": "false",
             "new_cluster": {
                 "spark_version": "12.2.x-cpu-ml-scala2.12",
-                "node_type_id": "i3.xlarge",
-                "spark_conf": {},
-                "aws_attributes": {"availability": "SPOT", "zone_id": "us-west-2a"},
+                "node_type_id": instance_type,
                 "autoscale": {"min_workers": 1, "max_workers": 2},
             },
         },
