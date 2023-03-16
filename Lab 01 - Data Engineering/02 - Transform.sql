@@ -45,7 +45,7 @@ cloud_files( '/FileStore/tmp/${current_user_id}/datasets/sales/' , "json")
 
 CREATE STREAMING LIVE TABLE bronze_stores
 TBLPROPERTIES ("quality" = "bronze")
-COMMENT "Store locations dimension"
+COMMENT "Information about stores"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
@@ -117,7 +117,7 @@ cloud_files( '/FileStore/tmp/${current_user_id}/datasets/weather/' , "json") ;
 
 -- MAGIC %md
 -- MAGIC 
--- MAGIC ## Silver fact tables
+-- MAGIC ### Silver Sales Tables
 
 -- COMMAND ----------
 
@@ -154,13 +154,7 @@ APPLY CHANGES INTO LIVE.silver_sales
 
 -- MAGIC %md
 -- MAGIC 
--- MAGIC ## Dimension tables in Silver layer
-
--- COMMAND ----------
-
--- MAGIC %md
--- MAGIC 
--- MAGIC Silver layer is a good place to add some data quality expectations
+-- MAGIC ### Silver Stores Table
 
 -- COMMAND ----------
 
@@ -174,6 +168,8 @@ SELECT * from STREAM(live.bronze_stores)
 -- COMMAND ----------
 
 -- MAGIC %md
+-- MAGIC 
+-- MAGIC ### Silver Products Table
 -- MAGIC 
 -- MAGIC Our silver_products table will be tracking changes history by using SCD TYPE 2 
 
@@ -197,7 +193,9 @@ APPLY CHANGES INTO LIVE.silver_products
 
 -- MAGIC %md
 -- MAGIC 
--- MAGIC Weather data needs some cleanup to convert it to multiple rows
+-- MAGIC ### Silver Weather Tables
+-- MAGIC 
+-- MAGIC Weather data needs some cleanup to convert it to multiple rows for easier querying
 
 -- COMMAND ----------
 
@@ -264,6 +262,12 @@ from
 -- MAGIC ## Step 3: Create Gold tables
 -- MAGIC 
 -- MAGIC These tables will be used by your business users and will usually contain aggregated datasets
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC 
+-- MAGIC ### Gold table example
 
 -- COMMAND ----------
 
