@@ -21,94 +21,216 @@
 # MAGIC * Introducing a new model to acccept traffic for A/B testing
 # MAGIC * ...
 # MAGIC 
-# MAGIC 
-# MAGIC *Note that we only have to do this once for our Orange Prediction model.
+# MAGIC Webhooks are available through the Databricks REST API or the Python client databricks-registry-webhooks on PyPI.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Webhook Supported events
-# MAGIC * A new model is added to the Registry
-# MAGIC * A new version of a registered model is added to the Registry
-# MAGIC * A model lifecycle transition request is made (e.g., from _Production_ to _Archived_)
-# MAGIC * A transition request is accepted or rejected
-# MAGIC * A comment is made on a model version
+# MAGIC ### Types of webhooks
+# MAGIC 
+# MAGIC There are two types of webhooks based on their trigger targets:
+# MAGIC 
+# MAGIC * Webhooks with HTTP endpoints (HTTP registry webhooks): Send triggers to an HTTP endpoint.
+# MAGIC 
+# MAGIC * Webhooks with job triggers (job registry webhooks): Trigger a job in a Databricks workspace.
+# MAGIC 
+# MAGIC There are also two types of webhooks based on their scope, with different access control requirements:
+# MAGIC 
+# MAGIC * Model-specific webhooks: The webhook applies to a specific registered model. You must have Can Manage permissions on the registered model to create, modify, delete, or test model-specific webhooks.
+# MAGIC 
+# MAGIC * Registry-wide webhooks: The webhook is triggered by events on any registered model in the workspace, including the creation of a new registered model. To create a registry-wide webhook, omit the model_name field on creation. You must have workspace admin permissions to create, modify, delete, or test registry-wide webhooks.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Example
+# MAGIC ### Webhook Supported events
+# MAGIC * MODEL_VERSION_CREATED: A new model version was created for the associated model.
 # MAGIC 
-# MAGIC In the following example, we have two notebooks - the first commits the model to the Model Registry, and the second runs a series of general validation checks and tests on it. You can see the entire workflow illustrated below.
+# MAGIC * MODEL_VERSION_TRANSITIONED_STAGE: A model version’s stage was changed.
 # MAGIC 
-# MAGIC <img src="https://github.com/QuentinAmbard/databricks-demo/raw/main/retail/resources/images/churn-mlflow-webhook.png" width=1000 >
-# MAGIC <br><br>
-# MAGIC Let's look at how this workflow plays out chronologically:<br><br>
+# MAGIC * TRANSITION_REQUEST_CREATED: A user requested a model version’s stage be transitioned.
 # MAGIC 
-# MAGIC 1. Data Scientist finishes model training and commits best model to Registry
-# MAGIC 2. Data Scientist requests lifecyle transition of best model to _Staging_
-# MAGIC 3. Webhooks are set for transition request event, and trigger a Databricks Job to test the model, and a Slack message to let the organization know that the lifecycle event is occurring
-# MAGIC 4. The testing job is launched
-# MAGIC 5. Depending on testing results, the lifecycle transition request is accepted or rejected
-# MAGIC 6. Webhooks trigger and send another Slack message to report the results of testing
-
-# COMMAND ----------
-
-# MAGIC %md 
-# MAGIC ### Create Webhooks
+# MAGIC * COMMENT_CREATED: A user wrote a comment on a registered model.
 # MAGIC 
-# MAGIC Setting up webhooks is simple using the Databricks REST API.  There are some helper functions in the `./_resources/API_Helpers` notebook, so if you want to see additional details you can check there.  
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC #### Model testing - Staging transition request
+# MAGIC * REGISTERED_MODEL_CREATED: A new registered model was created. This event type can only be specified for a registry-wide webhook, which can be created by not specifying a model name in the create request.
 # MAGIC 
-# MAGIC A testing notebook has been created by the ML Engineer team (we'll cover that in details soon).
+# MAGIC * MODEL_VERSION_TAG_SET: A user set a tag on the model version.
 # MAGIC 
-# MAGIC To accept the STAGING request, we'll run this notebook as a Databricks Job whenever we receive a request to move a model to STAGING.
+# MAGIC * MODEL_VERSION_TRANSITIONED_TO_STAGING: A model version was transitioned to staging.
 # MAGIC 
-# MAGIC The job will be in charge to validate or reject the transition upon completion.
-
-# COMMAND ----------
-
-# DBTITLE 1,You can use the jobs API to programmatically create the staging job
-# The job is programatically created if it doesn't exist
-job_id = get_model_staging_job_id()
-
-#This should be run once. For the demo We'll reset other webhooks to prevent from duplicated call
-reset_webhooks(model_name = f"orange_experiment_{USERNAME}")
-
-#Once we have the id of the job running the tests, we add the hook:
-create_job_webhook(model_name = f"orange_experiment_{USERNAME}", job_id = job_id)
-
-# COMMAND ----------
-
-import urllib 
-import json 
-import requests, json
-
-def create_notification_webhook(model_name, slack_url):
-  
-  trigger_slack = json.dumps({
-  "model_name": model_name,
-  "events": ["TRANSITION_REQUEST_CREATED"],
-  "description": "Notify the MLOps team that a model is requested to move to staging.",
-  "status": "ACTIVE",
-  "http_url_spec": {
-    "url": slack_url
-  }
-  })
-  response = mlflow_call_endpoint("registry-webhooks/create", method = "POST", body = trigger_slack)
-  return(response)
-
+# MAGIC * MODEL_VERSION_TRANSITIONED_TO_PRODUCTION: A model version was transitioned to production.
+# MAGIC 
+# MAGIC * MODEL_VERSION_TRANSITIONED_TO_ARCHIVED: A model version was archived.
+# MAGIC 
+# MAGIC * TRANSITION_REQUEST_TO_STAGING_CREATED: A user requested a model version be transitioned to staging.
+# MAGIC 
+# MAGIC * TRANSITION_REQUEST_TO_PRODUCTION_CREATED: A user requested a model version be transitioned to production.
+# MAGIC 
+# MAGIC * TRANSITION_REQUEST_TO_ARCHIVED_CREATED: A user requested a model version be archived.
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC #### Notification
-# MAGIC We also want to send slack notification when the a model change from one stage to another:
+# MAGIC ## Example
+# MAGIC 
+# MAGIC In the following example, we will demo who to use webhooks python client to create a job registry webhook.
 
 # COMMAND ----------
 
-create_notification_webhook(model_name = f"orange_experiment_{USERNAME}", slack_url = "https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX")
+# MAGIC %pip install databricks-registry-webhooks
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Create a test job, we will use webhook to trigger it
+
+# COMMAND ----------
+
+# MAGIC %pip install requests
+
+# COMMAND ----------
+
+import json
+import requests
+
+# COMMAND ----------
+
+DATABRICKS_DOMAIN = dbutils.notebook.entry_point.getDbutils().notebook().getContext().tags().get("browserHostName").get()
+ACCESS_TOKEN = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
+
+# COMMAND ----------
+
+JOB_API_ENDPOINT = f"https://{DATABRICKS_DOMAIN}/api/2.0/jobs"
+
+headers = {
+    "Authorization": f"Bearer {ACCESS_TOKEN}",
+    "Content-Type": "application/json"
+}
+
+# COMMAND ----------
+
+def create_databricks_job(job_name, notebook_path, cluster_settings):
+    job_config = {
+        "name": job_name,
+        "new_cluster": cluster_settings,
+        "notebook_task": {
+            "notebook_path": notebook_path,
+            "source": "GIT"
+        },
+        "git_source": {
+            "git_url": "https://github.com/zivilenorkunaite/apjbootcamp2022", #TODO: Change it to the official bootcamp git repo
+            "git_provider": "gitHub",
+            "git_branch": "main"
+        }
+    }
+    
+    response = requests.post(
+        f"{JOB_API_ENDPOINT}/create",
+        headers=headers,
+        data=json.dumps(job_config)
+    )
+    
+    if response.status_code == 200:
+        print(f"Job created successfully: {response.json()['job_id']}")
+        return response.json()
+    else:
+        print(f"Error creating job: {response.status_code} - {response.text}")
+        return None
+
+# COMMAND ----------
+
+job_name = "Test Job using git notebook"
+
+# Change to your repo
+notebook_path = "Lab 03 - Data Science/Utils/test_job" 
+
+# Customize the cluster settings according to your requirements
+cluster_settings = {
+    "spark_version": "12.2.x-scala2.12",
+    "node_type_id": "i3.xlarge",#For AWS workspace, change it to i3.xlarge, for Azure, change it to Standard_DS3_v2
+    "num_workers": 1
+}
+
+job = create_databricks_job(job_name, notebook_path, cluster_settings)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC #### Create webhooks, test them, and confirm their presence in the list of all webhooks
+
+# COMMAND ----------
+
+## SETUP: Fill in variables
+access_token = dbutils.notebook.entry_point.getDbutils().notebook().getContext().apiToken().get()
+model_name = 'orange_experiment_yang_wang'
+job_id = job['job_id'] 
+
+# COMMAND ----------
+
+from databricks_registry_webhooks import RegistryWebhooksClient, JobSpec, HttpUrlSpec
+
+# COMMAND ----------
+
+# Create a Job webhook
+job_spec = JobSpec(job_id=job_id, access_token=access_token)
+job_webhook = RegistryWebhooksClient().create_webhook(
+  events=["TRANSITION_REQUEST_CREATED"],
+  job_spec=job_spec,
+  model_name=model_name
+)
+job_webhook
+
+# COMMAND ----------
+
+# Test the Job webhook
+RegistryWebhooksClient().test_webhook(id=job_webhook.id)
+
+# COMMAND ----------
+
+# List all webhooks and verify webhooks just created are shown in the list
+webhooks_list = RegistryWebhooksClient().list_webhooks()
+print(webhooks_list[:10])
+assert job_webhook.id in [w.id for w in webhooks_list]
+
+# COMMAND ----------
+
+# MAGIC %md #### Create a transition request to trigger webhooks and then clean up webhooks
+
+# COMMAND ----------
+
+import mlflow
+from mlflow.utils.rest_utils import http_request
+import json
+
+def client():
+  return mlflow.tracking.client.MlflowClient()
+ 
+host_creds = client()._tracking_client.store.get_host_creds()
+
+def mlflow_call_endpoint(endpoint, method, body='{}'):
+  if method == 'GET':
+      response = http_request(
+          host_creds=host_creds, endpoint="/api/2.0/mlflow/{}".format(endpoint), method=method, params=json.loads(body))
+  else:
+      response = http_request(
+          host_creds=host_creds, endpoint="/api/2.0/mlflow/{}".format(endpoint), method=method, json=json.loads(body))
+  return response.json()
+
+# COMMAND ----------
+
+# Create a transition request to staging and check it will trigger the test job to run
+transition_request_body = {'name': model_name, 'version': 1, 'stage': 'Staging'}
+mlflow_call_endpoint('transition-requests/create', 'POST', json.dumps(transition_request_body))
+
+# COMMAND ----------
+
+# Delete all webhooks
+for webhook in webhooks_list:
+  RegistryWebhooksClient().delete_webhook(webhook.id)
+
+# COMMAND ----------
+
+# Verify webhook deletion
+webhooks_list = RegistryWebhooksClient().list_webhooks()
+print(webhooks_list[:10])
+assert job_webhook.id not in [w.id for w in webhooks_list]
