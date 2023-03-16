@@ -5,13 +5,13 @@
 
 spark.sql(f"CREATE DATABASE IF NOT EXISTS {database_name}_aux")
 
-spark.read.json(f"{base_table_path}sales_202201.json").createOrReplaceTempView('jan_sales_view')
-
 spark.sql(f"""
 CREATE TABLE IF NOT EXISTS {database_name}_aux.jan_sales
+USING DELTA
+PARTITIONED BY (location)
 AS 
 SELECT *, from_unixtime(ts, "yyyy-MM-dd") as ts_date 
-FROM jan_sales_view
+FROM json.`{base_table_path}sales_202201.json`
 ORDER BY from_unixtime(ts, "yyyy-MM-dd")
 """)
 
