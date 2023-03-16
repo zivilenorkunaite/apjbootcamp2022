@@ -86,7 +86,7 @@ dbutils.fs.ls(datasets_location)
 # MAGIC 
 # MAGIC 
 # MAGIC COPY INTO my_stores 
-# MAGIC FROM '/tmp/apjdatabricksbootcamp/datasets/stores/'
+# MAGIC FROM '/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/'
 # MAGIC FILEFORMAT = json
 # MAGIC FORMAT_OPTIONS ('mergeSchema' = 'true')
 # MAGIC COPY_OPTIONS ('mergeSchema' = 'true')
@@ -239,7 +239,7 @@ import datetime
 
 today = datetime.datetime.now()
 
-unique_forecast_id = f"forecast{lat}{long}{today}"
+unique_forecast_id = f"forecast{lat}{long}{today}".replace(":","-")
 
 weather_df.write.mode('Overwrite').json(f"{datasets_location}/weather/{unique_forecast_id}.json")
 
