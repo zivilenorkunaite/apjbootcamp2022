@@ -189,7 +189,9 @@ RegistryWebhooksClient().test_webhook(id=job_webhook.id)
 
 # List all webhooks and verify webhooks just created are shown in the list
 webhooks_list = RegistryWebhooksClient().list_webhooks()
-print(webhooks_list[:10])
+for webhook in webhooks_list:
+  if webhook.id == job_webhook.id:
+    print(webhook)
 assert job_webhook.id in [w.id for w in webhooks_list]
 
 # COMMAND ----------
@@ -226,11 +228,18 @@ mlflow_call_endpoint('transition-requests/create', 'POST', json.dumps(transition
 
 # Delete all webhooks
 for webhook in webhooks_list:
-  RegistryWebhooksClient().delete_webhook(webhook.id)
+  if webhook.id == job_webhook.id:
+    RegistryWebhooksClient().delete_webhook(webhook.id)
 
 # COMMAND ----------
 
 # Verify webhook deletion
 webhooks_list = RegistryWebhooksClient().list_webhooks()
-print(webhooks_list[:10])
+for webhook in webhooks_list:
+  if webhook.id == job_webhook.id:
+    print(webhook)
 assert job_webhook.id not in [w.id for w in webhooks_list]
+
+# COMMAND ----------
+
+

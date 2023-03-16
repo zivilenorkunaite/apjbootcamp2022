@@ -73,7 +73,7 @@ validation_data = validation_set.load_df().toPandas()
 
 # DBTITLE 1,Run AutoML
 from databricks import automl
-summary = automl.classify(training_data, target_col="quality", timeout_minutes=30)
+summary = automl.classify(training_data, target_col="quality", timeout_minutes=5, experiment_name="AP Juice AutoML Expr")
 
 # COMMAND ----------
 
