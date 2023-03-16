@@ -134,8 +134,8 @@ response = requests.get(url)
 
 if response.status_code == 200:
   json_data = sc.parallelize([response.text])
-  df = spark.read.json(json_data)
-  df.display()
+  weather_df = spark.read.json(json_data)
+  weather_df.display()
 
 else:
   print('Check your URL for errors!')
@@ -168,7 +168,7 @@ import datetime
 
 today = datetime.datetime.now()
 
-unique_forecast_id = f"forecast{lat}{long}{today}"
+unique_forecast_id = f"forecast{lat}{long}{today}".replace(":","-")
 
 weather_df.write.mode('Overwrite').json(f"{datasets_location}weather/{unique_forecast_id}.json")
 

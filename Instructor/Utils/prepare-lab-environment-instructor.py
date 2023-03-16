@@ -172,7 +172,7 @@ def get_country_code(store_id):
 
 
 def store_as_json(df, store_id, day):
-  filename = f"{datasets_location}/sales/{store_id}-{day}.json"
+  filename = f"{datasets_location}/sales/{store_id}-{day}.json".replace(':','-')
   df.write.mode('Overwrite').json(filename)
   
   
@@ -300,15 +300,16 @@ select *, 'insert' as _change_type, '2023-01-01 00:00:00.000' as _change_timesta
 
           
 def generate_product_cdc_data():
+  current_timestamp = f'{datetime.datetime.now()}'.replace(':','-')
   spark.sql(f"""
     select 'Punch' as id, 'delete' as _change_type, '2023-03-08 01:05:48.000' as _change_timestamp
-  """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{datetime.datetime.now()}.json")
+  """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{current_timestamp}.json")
   spark.sql(f"""
     select 'Craze' as id, 'update' as _change_type, 'Extra Blueberry' as name, '2023-03-08 01:05:48.000' as _change_timestamp
-     """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{datetime.datetime.now()}.json")
+     """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{current_timestamp}.json")
   spark.sql(f"""
     select 'Craze' as id, 'insert' as _change_type, 'DLT' as name, '["Carrot","Beatroot","Ginger"]' as ingredients, '2023-03-08 01:05:48.000' as _change_timestamp
-    """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{datetime.datetime.now()}.json")
+    """).write.mode('Overwrite').json(f"{datasets_location}products_cdc/updates-{uuid.uuid4()}-{current_timestamp}.json")
   
 generate_product_cdc_data()
 
