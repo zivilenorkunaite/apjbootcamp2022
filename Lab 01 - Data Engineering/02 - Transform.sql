@@ -11,11 +11,11 @@
 -- MAGIC %md
 -- MAGIC ## Important
 -- MAGIC 
--- MAGIC You will need to create a variable for identifying path to your data when creating a DLT pipeline. 
+-- MAGIC You will need to create a variable for identifying path to your data when creating a DLT pipeline. You can enter variable under **Advanced** -> Configuration
 -- MAGIC 
--- MAGIC Variable name: `current_user_id`
+-- MAGIC Key: `current_user_id`
 -- MAGIC 
--- MAGIC You can get correct value by running the following python cell
+-- MAGIC You can get value by running the following python cell
 
 -- COMMAND ----------
 
@@ -39,7 +39,7 @@ COMMENT "Bronze sales table with all transactions"
 AS 
 SELECT * 
 FROM
-cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/sales/' , "json") 
+cloud_files( '/FileStore/tmp/${current_user_id}/datasets/sales/' , "json") 
 
 -- COMMAND ----------
 
@@ -49,7 +49,7 @@ COMMENT "Store locations dimension"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
-cloud_files('/FileStore/tmp/${mypipeline.current_user_id}/datasets/stores/' , 'json');
+cloud_files('/FileStore/tmp/${current_user_id}/datasets/stores/' , 'json');
 
 -- COMMAND ----------
 
@@ -59,7 +59,7 @@ TBLPROPERTIES ("quality" = "cdc")
 COMMENT "CDC records for our products dataset"
 AS 
 SELECT * FROM 
-cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/products_cdc/' , "json") ;
+cloud_files( '/FileStore/tmp/${current_user_id}/datasets/products_cdc/' , "json") ;
 
 -- COMMAND ----------
 
@@ -76,7 +76,7 @@ TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Records from weather api"
 AS 
 SELECT * FROM 
-cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/weather/' , "json") ;
+cloud_files( '/FileStore/tmp/${current_user_id}/datasets/weather/' , "json") ;
 
 -- COMMAND ----------
 
