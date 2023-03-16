@@ -9,13 +9,21 @@
 -- COMMAND ----------
 
 -- MAGIC %md
--- MAGIC ## Basic DLT SQL Syntax
+-- MAGIC ## Important
 -- MAGIC 
--- MAGIC At its simplest, you can think of DLT SQL as a slight modification to tradtional CTAS statements.
+-- MAGIC You will need to create a variable for identifying path to your data when creating a DLT pipeline. 
 -- MAGIC 
--- MAGIC DLT tables and views will always be preceded by the `LIVE` keyword.
+-- MAGIC Variable name: `current_user_id`
 -- MAGIC 
--- MAGIC If you wish to process data incrementally (using the same processing model as Structured Streaming), also use the `STREAMING` keyword.
+-- MAGIC You can get correct value by running the following python cell
+
+-- COMMAND ----------
+
+-- MAGIC %python
+-- MAGIC 
+-- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
+-- MAGIC 
+-- MAGIC print(current_user_id)
 
 -- COMMAND ----------
 
@@ -31,7 +39,7 @@ COMMENT "Bronze sales table with all transactions"
 AS 
 SELECT * 
 FROM
-cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/sales/' , "json") 
+cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/sales/' , "json") 
 
 -- COMMAND ----------
 
@@ -41,7 +49,7 @@ COMMENT "Store locations dimension"
 AS 
 SELECT *, case when id in ('SYD01', 'MEL01', 'BNE02', 'MEL02', 'PER01', 'CBR01') then 'AUS' when id in ('AKL01', 'AKL02', 'WLG01') then 'NZL' end as country_code 
 FROM  
-cloud_files('/FileStore/tmp/apjdatabricksbootcamp/datasets/stores/' , 'json');
+cloud_files('/FileStore/tmp/${mypipeline.current_user_id}/datasets/stores/' , 'json');
 
 -- COMMAND ----------
 
@@ -51,7 +59,7 @@ TBLPROPERTIES ("quality" = "cdc")
 COMMENT "CDC records for our products dataset"
 AS 
 SELECT * FROM 
-cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/products_cdc/' , "json") ;
+cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/products_cdc/' , "json") ;
 
 -- COMMAND ----------
 
@@ -60,18 +68,6 @@ cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/products_cdc/' , "js
 -- MAGIC ## Weather data
 -- MAGIC 
 -- MAGIC We also have some data from weather API - it can be transformed using a different notebook, but we can also add it here.
--- MAGIC 
--- MAGIC **Important**
--- MAGIC 
--- MAGIC Change data path to match one you had in `01 - Ingest notebook` to pick up your dataset. You can get it by running cell below
-
--- COMMAND ----------
-
--- MAGIC %python
--- MAGIC 
--- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
--- MAGIC weather_files_location = f"/FileStore/tmp/{current_user_id}/datasets/weather/"
--- MAGIC print(weather_files_location)
 
 -- COMMAND ----------
 
@@ -80,7 +76,7 @@ TBLPROPERTIES ("quality" = "bronze")
 COMMENT "Records from weather api"
 AS 
 SELECT * FROM 
-cloud_files( '/FileStore/tmp/apjdatabricksbootcamp/datasets/weather/' , "json") ;
+cloud_files( '/FileStore/tmp/${mypipeline.current_user_id}/datasets/weather/' , "json") ;
 
 -- COMMAND ----------
 
