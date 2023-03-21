@@ -1,130 +1,132 @@
 -- Databricks notebook source
--- MAGIC %md
--- MAGIC Create a database to store your tables.
--- MAGIC </br>
--- MAGIC In the following cell replace "your_unique_database_name" with a unique database name :) (e.g., first_name_last_name_date). 
--- MAGIC </br>
--- MAGIC Make sure you don't remove the ;
-
--- COMMAND ----------
-
-CREATE DATABASE your_unique_database_name;
-USE your_unique_database_name;
-
--- COMMAND ----------
-
 -- MAGIC %python
+-- MAGIC import os
+-- MAGIC 
 -- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
 -- MAGIC datasets_location = f'/FileStore/tmp/{current_user_id}/datasets/'
 -- MAGIC 
 -- MAGIC dbutils.fs.rm(datasets_location, True)
--- MAGIC print(current_user_id)
-
--- COMMAND ----------
-
--- MAGIC %python
+-- MAGIC 
 -- MAGIC database_name = current_user_id.split('@')[0].replace('.','_')+'_bootcamp'
+-- MAGIC 
+-- MAGIC # create database
 -- MAGIC spark.sql(f'create database if not exists {database_name};')
 -- MAGIC spark.sql(f'use {database_name}')
--- MAGIC print(database_name)
-
--- COMMAND ----------
-
--- MAGIC %python
--- MAGIC # copy sample data from git
 -- MAGIC 
--- MAGIC import os
+-- MAGIC # copy sample data from git
 -- MAGIC 
 -- MAGIC working_dir = '/'.join(os.getcwd().split('/')[0:5])
 -- MAGIC git_datasets_location = f'{working_dir}/Datasets/SQL Lab'
 -- MAGIC 
--- MAGIC sample_datasets  =['dim_products','fact_apj_sale_items','dim_store_locations', 'fact_apj_sales_fact']
+-- MAGIC sample_datasets  =['dim_products','fact_apj_sale_items','dim_store_locations', 'fact_apj_sales']
 -- MAGIC for sample_data in sample_datasets:
 -- MAGIC   dbutils.fs.cp(f'file:{git_datasets_location}/{sample_data}.csv', f'{datasets_location}/SQL_Lab/{sample_data}.csv')
 -- MAGIC 
--- MAGIC spark.conf.set('sampledata.path',f'{datasets_location}SQL_Lab/')
--- MAGIC spark.conf.set('sampledata.path','dbfs:/FileStore/anzbootcamp/dim_products.csv')
+-- MAGIC print(f'Use this database name through out the lab: {database_name}')
 
 -- COMMAND ----------
 
-select concat('${sampledata.path}', 'dim_products.csv')
+-- MAGIC %python
+-- MAGIC table_name = "dim_products"
+-- MAGIC sample_file = f"{table_name}.csv"
+-- MAGIC spark.conf.set('sampledata.path',f'dbfs:{datasets_location}SQL_Lab/{sample_file}')
+-- MAGIC spark.conf.set('table.name', table_name)
 
 -- COMMAND ----------
 
-DROP TABLE IF EXISTS dim_products;
+DROP TABLE IF EXISTS `${table.name}`;
 
-CREATE  TABLE IF NOT EXISTS dim_products;
+CREATE TABLE IF NOT EXISTS `${table.name}`;
 
-COPY INTO dim_products FROM 
+COPY INTO `${table.name}` FROM 
 (SELECT *
-FROM '${sampledata.path}')
+FROM  '${sampledata.path}')
 FILEFORMAT = CSV
 FORMAT_OPTIONS ('mergeSchema' = 'true',
                 'delimiter' = ',',
-                'header' = 'true')
+                'header' = 'true',
+                'quote'="'")
 COPY_OPTIONS ('mergeSchema' = 'true');
 
 -- COMMAND ----------
 
-/*dim_products*/
-DROP TABLE IF EXISTS dim_products;
+-- MAGIC %python
+-- MAGIC table_name = "dim_store_locations"
+-- MAGIC sample_file = f"{table_name}.csv"
+-- MAGIC spark.conf.set('sampledata.path',f'dbfs:{datasets_location}SQL_Lab/{sample_file}')
+-- MAGIC spark.conf.set('table.name', table_name)
 
-CREATE  TABLE IF NOT EXISTS dim_products;
+-- COMMAND ----------
 
-COPY INTO dim_products FROM 
+DROP TABLE IF EXISTS `${table.name}`;
+
+CREATE TABLE IF NOT EXISTS `${table.name}`;
+
+COPY INTO `${table.name}` FROM 
 (SELECT *
-FROM 'dbfs:/FileStore/anzbootcamp/dim_products.csv')
+FROM  '${sampledata.path}')
 FILEFORMAT = CSV
 FORMAT_OPTIONS ('mergeSchema' = 'true',
                 'delimiter' = ',',
-                'header' = 'true')
+                'header' = 'true',
+                'quote'="'")
 COPY_OPTIONS ('mergeSchema' = 'true');
 
+SELECT * FROM `${table.name}`;
 
-/*dim_store_locations*/
-DROP TABLE IF EXISTS dim_store_locations;
+-- COMMAND ----------
 
-CREATE  TABLE IF NOT EXISTS dim_store_locations;
+-- MAGIC %python
+-- MAGIC table_name = "fact_apj_sales"
+-- MAGIC sample_file = f"{table_name}.csv"
+-- MAGIC spark.conf.set('sampledata.path',f'dbfs:{datasets_location}SQL_Lab/{sample_file}')
+-- MAGIC spark.conf.set('table.name', table_name)
 
-COPY INTO dim_store_locations FROM 
+-- COMMAND ----------
+
+DROP TABLE IF EXISTS `${table.name}`;
+
+CREATE TABLE IF NOT EXISTS `${table.name}`;
+
+COPY INTO `${table.name}` FROM 
 (SELECT *
-FROM 'dbfs:/FileStore/anzbootcamp/dim_store_locations_sample.csv')
+FROM  '${sampledata.path}')
 FILEFORMAT = CSV
 FORMAT_OPTIONS ('mergeSchema' = 'true',
                 'delimiter' = ',',
-                'header' = 'true')
+                'header' = 'true',
+                'quote'="'")
 COPY_OPTIONS ('mergeSchema' = 'true');
 
+SELECT * FROM `${table.name}`;
 
-/*apj_sales_fact*/
-DROP TABLE IF EXISTS apj_sales_fact;
+-- COMMAND ----------
 
-CREATE  TABLE IF NOT EXISTS apj_sales_fact;
+-- MAGIC %python
+-- MAGIC table_name = "fact_apj_sale_items"
+-- MAGIC sample_file = f"{table_name}.csv"
+-- MAGIC spark.conf.set('sampledata.path',f'dbfs:{datasets_location}SQL_Lab/{sample_file}')
+-- MAGIC spark.conf.set('table.name', table_name)
 
-COPY INTO apj_sales_fact FROM 
+-- COMMAND ----------
+
+DROP TABLE IF EXISTS `${table.name}`;
+
+CREATE TABLE IF NOT EXISTS `${table.name}`;
+
+COPY INTO `${table.name}` FROM 
 (SELECT *
-FROM 'dbfs:/FileStore/anzbootcamp/apj_sales_fact_sample.csv')
+FROM  '${sampledata.path}')
 FILEFORMAT = CSV
 FORMAT_OPTIONS ('mergeSchema' = 'true',
                 'delimiter' = ',',
-                'header' = 'true')
+                'header' = 'true',
+                'quote'="'")
 COPY_OPTIONS ('mergeSchema' = 'true');
 
+SELECT * FROM `${table.name}`;
 
-/*apj_sale_items*/
-DROP TABLE IF EXISTS apj_sale_items_fact;
-
-CREATE  TABLE IF NOT EXISTS apj_sale_items_fact;
-
-COPY INTO apj_sale_items_fact FROM 
-(SELECT *
-FROM 'dbfs:/FileStore/anzbootcamp/apj_sale_items_fact.csv')
-FILEFORMAT = CSV
-FORMAT_OPTIONS ('mergeSchema' = 'true',
-                'delimiter' = ',',
-                'header' = 'true')
-COPY_OPTIONS ('mergeSchema' = 'true');
-
+-- COMMAND ----------
 
 /*store_data, json*/
 DROP TABLE IF EXISTS store_data;
