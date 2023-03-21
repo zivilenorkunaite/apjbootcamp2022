@@ -2,16 +2,19 @@
 -- MAGIC %python
 -- MAGIC import os
 -- MAGIC 
+-- MAGIC reset = True
 -- MAGIC current_user_id = dbutils.notebook.entry_point.getDbutils().notebook().getContext().userName().get()
 -- MAGIC datasets_location = f'/FileStore/tmp/{current_user_id}/datasets/'
--- MAGIC 
--- MAGIC dbutils.fs.rm(datasets_location, True)
--- MAGIC 
 -- MAGIC database_name = current_user_id.split('@')[0].replace('.','_')+'_bootcamp'
 -- MAGIC 
+-- MAGIC if reset:
+-- MAGIC   dbutils.fs.rm(datasets_location, True)
+-- MAGIC   spark.sql(f'DROP DATABASE IF EXISTS {database_name} CASCADE')
+-- MAGIC 
+-- MAGIC 
 -- MAGIC # create database
--- MAGIC spark.sql(f'create database if not exists {database_name};')
--- MAGIC spark.sql(f'use {database_name}')
+-- MAGIC spark.sql(f'CREATE DATABASE IF NOT EXISTS {database_name};')
+-- MAGIC spark.sql(f'USE {database_name}')
 -- MAGIC 
 -- MAGIC # copy sample data from git
 -- MAGIC 
@@ -21,7 +24,16 @@
 -- MAGIC sample_datasets  =['dim_products','fact_apj_sale_items','dim_store_locations', 'fact_apj_sales']
 -- MAGIC for sample_data in sample_datasets:
 -- MAGIC   dbutils.fs.cp(f'file:{git_datasets_location}/{sample_data}.csv', f'{datasets_location}/SQL_Lab/{sample_data}.csv')
--- MAGIC 
+
+-- COMMAND ----------
+
+-- MAGIC %md
+-- MAGIC ###GET the DATABASE NAME below
+-- MAGIC You should use this throughout the lab
+
+-- COMMAND ----------
+
+-- MAGIC %python
 -- MAGIC print(f'Use this database name through out the lab: {database_name}')
 
 -- COMMAND ----------
@@ -47,6 +59,8 @@ FORMAT_OPTIONS ('mergeSchema' = 'true',
                 'header' = 'true',
                 'quote'="'")
 COPY_OPTIONS ('mergeSchema' = 'true');
+
+SELECT * FROM `${table.name}`;
 
 -- COMMAND ----------
 
@@ -129,10 +143,10 @@ SELECT * FROM `${table.name}`;
 -- COMMAND ----------
 
 /*store_data, json*/
-DROP TABLE IF EXISTS store_data;
-CREATE TABLE IF NOT EXISTS store_data AS SELECT
-
-1 AS id, '{
+CREATE OR REPLACE TABLE store_data_json
+AS SELECT
+1 AS id,
+'{
    "store":{
       "fruit": [
         {"weight":8,"type":"apple"},
@@ -177,7 +191,7 @@ CREATE TABLE IF NOT EXISTS store_data AS SELECT
     "owner":"amy",
     "zip code":"94025",
     "fb:testid":"1234"
- }' as raw
+ }' as raw;
 
-
+SELECT * FROM store_data_json;
 

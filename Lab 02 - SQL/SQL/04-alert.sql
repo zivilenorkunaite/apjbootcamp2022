@@ -6,9 +6,12 @@ get your databse name by running the first cell of the prep-notebook
 USE your_database_name;
 --------------------
 
+-- use this to set up the alert
 SELECT store_name, cnt AS canceled_per_store
 FROM vw_order_by_city WHERE order_state=="CANCELED";
 
+
+-- then insert new rows to trigger the alert
 
 INSERT INTO fact_apj_sales
 (customer_skey, slocation_skey, sale_id, ts, order_source, order_state,  unique_customer_id, store_id) 

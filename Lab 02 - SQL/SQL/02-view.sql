@@ -28,14 +28,6 @@ GROUP BY
 
 -- CREATE a VIEW
 
---------------------
-/* replace your_database_name in the following command by your database name 
-get your databse name by running the first cell of the prep-notebook 
-*/
---------------------
-USE your_database_name;
---------------------
-
 CREATE VIEW IF NOT EXISTS vw_order_by_city
 AS
 SELECT
