@@ -277,6 +277,8 @@ def generate_sales_dataset(n = 3):
     df = spark.createDataFrame(i[1])
     store_id = i[0]
     store_as_json(df, store_id, f'{start_date.strftime("%Y-%m-%d")}-{end_date.strftime("%Y-%m-%d")}')
+    
+  return "New sales data generated in folder: " + f"{datasets_location}sales/"
 
 
 
