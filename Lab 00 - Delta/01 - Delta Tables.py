@@ -15,6 +15,7 @@
 # MAGIC 
 # MAGIC Some of the things we will look at are:
 # MAGIC * Creating a new Delta Table
+# MAGIC * Data transformations like Merge, upserts, delete
 # MAGIC * Using Delta Log and Time Traveling 
 # MAGIC * Tracking data changes using Change Data Feed
 # MAGIC * Cloning tables
@@ -47,17 +48,11 @@
 
 # COMMAND ----------
 
-setup_responses = dbutils.notebook.run("./Utils/Setup-Batch", 0).split()
+# MAGIC %run "../Lab 01 - Data Engineering/Utils/prepare-lab-environment"
 
-local_data_path = setup_responses[0]
-dbfs_data_path = setup_responses[1]
-database_name = setup_responses[2]
+# COMMAND ----------
 
-print("Local data path is {}".format(local_data_path))
-print("DBFS path is {}".format(dbfs_data_path))
-print("Database name is {}".format(database_name))
-
-spark.sql(f"USE {database_name};")
+generate_sales_dataset()
 
 # COMMAND ----------
 
@@ -87,14 +82,13 @@ spark.sql(f"USE {database_name};")
 
 # COMMAND ----------
 
-dataPath = f"{dbfs_data_path}/stores.csv"
+dataPath = f"file:{git_datasets_location}stores.csv"
 
 df = spark.read\
-  .option("header", "true")\
-  .option("delimiter", ",")\
-  .option("quote", "\"") \
-  .option("inferSchema", "true")\
-  .csv(dataPath)
+    .option("header","true")\
+    .option("inferSchema", "true")\
+    .csv(dataPath)
+    
 
 display(df)
 
@@ -145,6 +139,23 @@ df.createOrReplaceTempView("stores_csv_file")
 
 # COMMAND ----------
 
+# MAGIC %md 
+# MAGIC ## Lab trial : create a delta table with the products.json in the datasets
+# MAGIC 
+# MAGIC You can use this [page](https://api-docs.databricks.com/python/pyspark/latest/pyspark.sql/api/pyspark.sql.DataFrameReader.json.html?highlight=json&_gl=1*i72q5f*_gcl_aw*R0NMLjE2NzkyODA1ODkuQ2p3S0NBanc1ZHFnQmhCTkVpd0E3UHJ5YUFpNVFQMUxMWDhIY3ZfRm9KdUtDZzdrU1V3QmxhcHRjSG1jZU9SUHN4cm5xYXRUS2xvU1ZCb0MyX1lRQXZEX0J3RQ..&_ga=2.83797270.1008137546.1679267788-930940010.1670205054#pyspark.sql.DataFrameReader.json) for example. Further if you want to write a dataframe without creating a view use this [page](https://docs.databricks.com/delta/tutorial.html#create-a-table) for reference
+
+# COMMAND ----------
+
+filepath = f"file:{git_datasets_location}products.json"
+products_df = spark.read.json(filepath)
+display(products_df)
+
+# COMMAND ----------
+
+products_df.write.saveAsTable("products")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC 
 # MAGIC ### Describe Delta Table
@@ -156,8 +167,18 @@ df.createOrReplaceTempView("stores_csv_file")
 # COMMAND ----------
 
 # MAGIC %sql
+# MAGIC SHOW TABLES 
+
+# COMMAND ----------
+
+# MAGIC %sql
 # MAGIC 
 # MAGIC DESCRIBE EXTENDED stores
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC Describe HISTORY stores
 
 # COMMAND ----------
 
@@ -165,25 +186,7 @@ df.createOrReplaceTempView("stores_csv_file")
 # MAGIC 
 # MAGIC One of the rows in output above provides us with `Location` information. This is where the actual delta files are being stored.
 # MAGIC 
-# MAGIC Now that we know the location of this table, let's look at the files! We can use another `dbutils` command for that
-
-# COMMAND ----------
-
-table_location = f"dbfs:/user/hive/warehouse/{database_name}.db/stores"
-
-displayHTML(f"""Make sure <b style="color:green">{table_location}</b> match your table location as per <b>DESCRIBE EXTENDED</b> output above""")
-
-dbutils.fs.ls(table_location)
-
-# COMMAND ----------
-
-# MAGIC %fs ls dbfs:/user/hive/warehouse/
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DESCRIBE HISTORY stores;
+# MAGIC Lets observe how we can do various transformations steps on a Delta Table 
 
 # COMMAND ----------
 
@@ -214,6 +217,12 @@ dbutils.fs.ls(table_location)
 
 # COMMAND ----------
 
+# MAGIC %md 
+# MAGIC 
+# MAGIC ###LAB EXERCISE : Missed store_country for id MEL02. Update the store_country as AUS for id MEL02
+
+# COMMAND ----------
+
 # MAGIC %sql
 # MAGIC 
 # MAGIC update stores
@@ -227,9 +236,85 @@ dbutils.fs.ls(table_location)
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC describe table stores
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC 
+# MAGIC ### Merge Delta Table
+# MAGIC 
+# MAGIC Upsert changes into Delta table. 
+
+# COMMAND ----------
+
+# DBTITLE 1,Lets create some new stores
+# MAGIC 
+# MAGIC %sql
+# MAGIC create table if not exists update_stores (id STRING, name STRING, email STRING, city STRING, hq_address STRING, phone_number STRING, store_country STRING);
+# MAGIC delete from update_stores;
+# MAGIC insert into update_stores values('ADL01', 'Adelaide CBD', 'janedane@apjuice.au', 'Adelaide','25 Pirie Street Adelaide SA 5000', '0732975665', 'AUS');
+# MAGIC insert into update_stores values('ADL02', 'Adelaide Airport', 'janedane@apjuice.au', 'Adelaide','Sir Richard Williams Ave, Adelaide Airport SA 5950', '34652308', 'AUS');
+# MAGIC insert into update_stores values('AKL02', 'Auckland CBD', 'jeremysmith@apjuice.au', 'Auckland' ,'85 Webb Street MacDonaldmouth 5504', '+64273484326', 'NZL')
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC 
+# MAGIC MERGE INTO stores
+# MAGIC USING update_stores
+# MAGIC ON update_stores.id = stores.id
+# MAGIC WHEN MATCHED THEN 
+# MAGIC   UPDATE SET * 
+# MAGIC WHEN NOT MATCHED THEN
+# MAGIC   INSERT * ;
+# MAGIC 
+# MAGIC select * from stores;
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC 
-# MAGIC ### Track Data History
+# MAGIC ###ALTER TABLE
+# MAGIC 
+# MAGIC To modify the schema or properties of a table
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC ALTER TABLE stores SET TBLPROPERTIES (
+# MAGIC    'delta.columnMapping.mode' = 'name',
+# MAGIC    'delta.minReaderVersion' = '2',
+# MAGIC    'delta.minWriterVersion' = '5');
+
+# COMMAND ----------
+
+# DBTITLE 1,Change column name
+# MAGIC %sql
+# MAGIC ALTER TABLE stores ALTER COLUMN id COMMENT "unique id for the store" ;
+# MAGIC ALTER TABLE stores RENAME COLUMN id TO store_id;
+# MAGIC DESCRIBE TABLE stores;
+
+# COMMAND ----------
+
+# MAGIC %md 
+# MAGIC 
+# MAGIC ### Table Constraints
+# MAGIC 
+# MAGIC Constraints ensure Data quality and integrity on the Delta Tables. You can use the same **ALTER TABLE** to add constraints
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ###LAB Exercise : Add a constraint to the table for **id** to not be NULL. Refer this [page](https://docs.databricks.com/tables/constraints.html#set-a-not-null-constraint-in-databricks) for syntax help
+# MAGIC Verify by inserting a value into the table with a NULL value for ___store_id___
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 
+# MAGIC ### Delta History and Time Travel
 # MAGIC 
 # MAGIC 
 # MAGIC Delta Tables keep all changes made in the delta log we've seen before. There are multiple ways to see that - e.g. by running `DESCRIBE HISTORY` for a table
@@ -256,37 +341,15 @@ dbutils.fs.ls(table_location)
 
 # COMMAND ----------
 
+# MAGIC %sql
+# MAGIC INSERT INTO stores values ('SYD02', 'Sydney Bondi', 'joe@apjuic.au','Sydney', '66 King Street, 2000', '046562498','AUS')
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC 
-# MAGIC You can remove files no longer referenced by a Delta table and are older than the retention threshold by running the `VACCUM` command on the table. vacuum is not triggered automatically. The default retention threshold for the files is 7 days.
-# MAGIC 
-# MAGIC `vacuum` deletes only data files, not log files. Log files are deleted automatically and asynchronously after checkpoint operations. The default retention period of log files is 30 days, configurable through the `delta.logRetentionDuration` property which you set with the `ALTER TABLE SET TBLPROPERTIES` SQL method.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC VACUUM stores
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from stores VERSION AS OF 2 
-# MAGIC where id = 'MEL02';
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DESCRIBE HISTORY stores
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC ALTER TABLE stores
-# MAGIC SET TBLPROPERTIES (delta.logRetentionDuration = '180 Days')
+# MAGIC ### Lab exercise : Perform an anti join for the same table with previous version ###
+# MAGIC Refer to the [Join](https://docs.databricks.com/sql/language-manual/sql-ref-syntax-qry-select-join.html) syntax for further details
 
 # COMMAND ----------
 
@@ -332,12 +395,12 @@ dbutils.fs.ls(table_location)
 # MAGIC 
 # MAGIC update stores
 # MAGIC set hq_address = 'Domestic Terminal, AKL'
-# MAGIC where id = 'AKL01';
+# MAGIC where store_id = 'AKL01';
 # MAGIC 
 # MAGIC delete from stores
-# MAGIC where id = 'BNE02';
+# MAGIC where store_id = 'BNE02';
 # MAGIC 
-# MAGIC SELECT * FROM table_changes('stores', 8, 9) -- Note that we increment versions due to UPDATE statements above
+# MAGIC SELECT * FROM table_changes('stores', 11, 13) -- Note that we increment versions due to UPDATE statements above
 
 # COMMAND ----------
 
@@ -357,6 +420,11 @@ dbutils.fs.ls(table_location)
 # COMMAND ----------
 
 # MAGIC %md
+# MAGIC ###Lab Exercise:  Execute CDC changes for the same delta table but with timestamp version ###
+
+# COMMAND ----------
+
+# MAGIC %md
 # MAGIC 
 # MAGIC ### CLONE
 # MAGIC 
@@ -367,8 +435,8 @@ dbutils.fs.ls(table_location)
 # MAGIC 
 # MAGIC  
 # MAGIC 
-# MAGIC * A **deep clone** is a clone that copies the source table data to the clone target in addition to the metadata of the existing table.
-# MAGIC * A **shallow clone** is a clone that does not copy the data files to the clone target. The table metadata is equivalent to the source. These clones are cheaper to create, but they will break if original data files were not available
+# MAGIC * A **deep clone** is a copy of all the underlying files of the source table data in addition to the metadata of the existing table. Deep clones are useful for testing in a production environment, data migration and staging major changes to a production table
+# MAGIC * A **shallow clone** is a clone that does not copy the data files to the clone target. The table metadata is equivalent to the source. These clones are cheaper to create, but they will break if original data files were not available. Beneficial for short-lived use cases such as testing or any experimentation
 
 # COMMAND ----------
 
@@ -393,62 +461,3 @@ dbutils.fs.ls(table_location)
 # MAGIC -- Note that no files are copied
 # MAGIC 
 # MAGIC create table stores_clone_shallow SHALLOW CLONE stores
-
-# COMMAND ----------
-
-# MAGIC %md
-# MAGIC 
-# MAGIC ### Dynamic Views
-# MAGIC 
-# MAGIC 
-# MAGIC Our stores table has some PII data (email, phone number). We can use dynamic views to limit visibility to the columns and rows depending on groups user belongs to.
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from stores
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DROP VIEW IF EXISTS v_stores_email_redacted;
-# MAGIC 
-# MAGIC CREATE VIEW v_stores_email_redacted AS
-# MAGIC SELECT
-# MAGIC   id,
-# MAGIC   name,
-# MAGIC   CASE WHEN
-# MAGIC     is_member('admins') THEN email
-# MAGIC     ELSE 'REDACTED'
-# MAGIC   END AS email,
-# MAGIC   city,
-# MAGIC   hq_address,
-# MAGIC   phone_number,
-# MAGIC   store_country
-# MAGIC FROM stores;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from v_stores_email_redacted;
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC DROP VIEW IF EXISTS v_stores_country_limited;
-# MAGIC 
-# MAGIC CREATE VIEW v_stores_country_limited AS
-# MAGIC SELECT *
-# MAGIC FROM stores
-# MAGIC WHERE 
-# MAGIC   (is_member('admins') OR id = 'SYD01');
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC 
-# MAGIC select * from v_stores_country_limited;
