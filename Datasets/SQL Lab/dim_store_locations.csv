@@ -1,0 +1,10 @@
+﻿slocation_skey,id,name,city,hq_address,country_code,phone_number,current_record,start_date,end_date
+1,AKL01,Auckland Airport,Auckland,976 Reeves Street Webbland 2011,NZL,666 5759,Y,1900-01-01 00:00:00,
+2,AKL02,Auckland CBD,Auckland,85 Webb Street MacDonaldmouth 5504,NZL,+64273484326,Y,1900-01-01 00:00:00,
+3,BNE02,Brisbane Airport,Brisbane,"6 Ware Copse Doughertystad, NSW, 2687",AUS,0425.061.371,Y,1900-01-01 00:00:00,
+4,CBR01,Canberra Airport,Canberra,"5 Julie Reach Lake Aaron, TAS, 2955",AUS,0495-403-281,Y,1900-01-01 00:00:00,
+5,MEL01,Melbourne CBD,Melbourne,"3 Tiffany Round Stonehaven, WA, 2687",AUS,(02) 6391 6842,Y,1900-01-01 00:00:00,
+6,MEL02,Melbourne Airport,Melbourne,"57 Bryan Circuit New Jason, ACT, 2968",AUS,0777304662,Y,1900-01-01 00:00:00,
+7,PER01,Perth CBD,Perth,"Level 2 95 Jorge Vale St. Gary, NT, 2705",AUS,08-9854-6006,Y,1900-01-01 00:00:00,
+8,SYD01,Sydney CBD,Sydney,"Flat 95 2 Ernest Laneway Alyssaburgh, WA, 2675",AUS,44428748,Y,1900-01-01 00:00:00,
+9,WLG01,Wellington CBD,Wellington,7 Rowland Reserve RD 2 Arawaka 1086,NZL,(04) 4059380,Y,1900-01-01 00:00:00,
