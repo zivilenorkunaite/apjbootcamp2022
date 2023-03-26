@@ -31,7 +31,7 @@ raw_data = data.pandas_api()
 # MAGIC From chemistry, we know that pH approximates the concentration of hydrogen ions in a solution. We are going to use this information to include a new (potentially predictive) feature into our model: 
 # MAGIC 
 # MAGIC $$\\text{pH} = - \\text{log}_{10} ( h_{\\text{concentration}} )$$
-# MAGIC $$ \Rightarrow h_{\\text{concentration}} = 10^{\\text{pH}} $$
+# MAGIC $$ \Rightarrow h_{\\text{concentration}} = 1/10^{\\text{pH}} $$
 
 # COMMAND ----------
 
